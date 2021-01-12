@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"runtime"
 	"time"
 
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/kardianos/service"
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/topxeq/sqltk"
@@ -21,6 +23,11 @@ var cfgMapG map[string]string = nil
 var basePathG = "."
 var portG = ":7492"
 var sslPortG = ":7493"
+var serviceNameG = "umx"
+var serviceModeG = false
+var runModeG = ""
+var currentOSG = ""
+var configFileNameG = serviceNameG + ".cfg"
 
 var defaultConfigG = `
 {
@@ -28,6 +35,7 @@ var defaultConfigG = `
 	"DBConnectString": "umx.db",
 	"MainSecret": "UMX_easy",
 	"TokenSecret": "is_Token",
+	"TokenExpire": "1440",
 	"TestMode": "true"
 }
 `
@@ -41,23 +49,27 @@ var initSQLs = []string{
 	`INSERT INTO APP (CODE, NAME, SECRET) VALUES('APP1', '', 'SECRET1')`,
 
 	`DROP TABLE ORG`,
-	`CREATE TABLE ORG (ID int(11) NOT NULL AUTO_INCREMENT, UP_ID int(11) DEFAULT NULL, APP_CODE VARCHAR(100) DEFAULT NULL, NAME VARCHAR(1024) NOT NULL, CODE VARCHAR(32) DEFAULT NULL, DESCRIPTION VARCHAR(255) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, PRIMARY KEY (ID)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
+	`CREATE TABLE ORG (ID int(11) NOT NULL AUTO_INCREMENT, UP_ID int(11) DEFAULT NULL, APP_CODE VARCHAR(100) DEFAULT NULL, NAME VARCHAR(1024) NOT NULL, CODE VARCHAR(32) DEFAULT NULL, TYPE VARCHAR(32) DEFAULT NULL, CONTACT VARCHAR(255) DEFAULT NULL, ADDRESS VARCHAR(255) DEFAULT NULL, UP_CODE VARCHAR(32) DEFAULT NULL, UP_NAME VARCHAR(1024) DEFAULT NULL, DESCRIPTION VARCHAR(255) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, RESV1 varchar(255) DEFAULT NULL, REL JSON DEFAULT NULL, PRIMARY KEY (ID)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
 	`INSERT INTO ORG (NAME, APP_CODE) VALUES('中国', 'APP1')`,
 	`INSERT INTO ORG (NAME, APP_CODE, UP_ID) select '北京', 'APP1', ID from ORG where NAME='中国'`,
 	`INSERT INTO ORG (NAME, APP_CODE, UP_ID) select '海淀区', 'APP1', ID from ORG where NAME='北京'`,
 
 	`DROP TABLE ORG_GROUP`,
-	`CREATE TABLE ORG_GROUP (ID int(11) NOT NULL AUTO_INCREMENT, APP_CODE VARCHAR(100) DEFAULT NULL, NAME VARCHAR(1024) NOT NULL, CODE VARCHAR(32) DEFAULT NULL, DESCRIPTION VARCHAR(255) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, PRIMARY KEY (ID)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
+	`CREATE TABLE ORG_GROUP (ID int(11) NOT NULL AUTO_INCREMENT, APP_CODE VARCHAR(100) DEFAULT NULL, NAME VARCHAR(1024) NOT NULL, CODE VARCHAR(32) DEFAULT NULL, DESCRIPTION VARCHAR(255) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, RESV1 varchar(255) DEFAULT NULL, REL JSON DEFAULT NULL, PRIMARY KEY (ID)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
 	`INSERT INTO ORG_GROUP (NAME, APP_CODE, DESCRIPTION, REMARK) VALUES('华北大区', 'APP1', '', '')`,
 	`INSERT INTO ORG_GROUP (NAME, APP_CODE, DESCRIPTION, REMARK) VALUES('东北大区', 'APP1', '', '')`,
 
 	`DROP TABLE ORG_GROUP_LINK`,
-	`CREATE TABLE ORG_GROUP_LINK (ID int(11) NOT NULL AUTO_INCREMENT, APP_CODE VARCHAR(100) DEFAULT NULL, ORG_GROUP_ID int(11) NOT NULL, ORG_ID int(11) NOT NULL, REMARK varchar(255) DEFAULT NULL, PRIMARY KEY (ID)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
-	`INSERT INTO ORG_GROUP_LINK (APP_CODE, ORG_GROUP_ID, ORG_ID, REMARK) select 'APP1', a.ID, b.ID, '' from (SELECT ID from ORG_GROUP where NAME='华北大区') a, (SELECT ID from ORG where NAME='北京') b`,
+	`CREATE TABLE ORG_GROUP_LINK (ID int(11) NOT NULL AUTO_INCREMENT, APP_CODE VARCHAR(100) DEFAULT NULL, ORG_GROUP_ID int(11) NOT NULL, GROUP_NAME VARCHAR(1024) DEFAULT NULL, ORG_ID int(11) NOT NULL, ORG_NAME VARCHAR(1024) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, RESV1 varchar(255) DEFAULT NULL, PRIMARY KEY (ID)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
+	`INSERT INTO ORG_GROUP_LINK (APP_CODE, ORG_GROUP_ID, GROUP_NAME, ORG_ID, ORG_NAME, REMARK) select 'APP1', a.ID, '华北大区', b.ID, "北京", '' from (SELECT ID from ORG_GROUP where NAME='华北大区') a, (SELECT ID from ORG where NAME='北京') b`,
 
 	`DROP TABLE USER`,
-	`CREATE TABLE USER (ID int(11) NOT NULL AUTO_INCREMENT, APP_CODE VARCHAR(100) DEFAULT NULL, ID_TYPE VARCHAR(32), USER_ID VARCHAR(100) NOT NULL, PASSWORD VARCHAR(100) NOT NULL, NAME VARCHAR(100) DEFAULT NULL, EMAIL VARCHAR(100) DEFAULT NULL, MOBILE VARCHAR(32) DEFAULT NULL, ROLE VARCHAR(100) DEFAULT NULL, DESCRIPTION VARCHAR(255) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, RESV1 varchar(255) DEFAULT NULL, RESV2 varchar(255) DEFAULT NULL, RESV3 varchar(255) DEFAULT NULL, PRIMARY KEY (ID), UNIQUE KEY USER_UN (APP_CODE,USER_ID)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
+	`CREATE TABLE USER (ID int(11) NOT NULL AUTO_INCREMENT, APP_CODE VARCHAR(100) DEFAULT NULL, ID_TYPE VARCHAR(32), USER_ID VARCHAR(100) NOT NULL, PASSWORD VARCHAR(100) NOT NULL, NAME VARCHAR(100) DEFAULT NULL, EMAIL VARCHAR(100) DEFAULT NULL, MOBILE VARCHAR(32) DEFAULT NULL, ROLE VARCHAR(100) DEFAULT NULL, USER_STATUS VARCHAR(32) DEFAULT NULL, DESCRIPTION VARCHAR(255) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, RESV1 varchar(255) DEFAULT NULL, RESV2 varchar(255) DEFAULT NULL, RESV3 varchar(255) DEFAULT NULL, PRIMARY KEY (ID), UNIQUE KEY USER_UN (APP_CODE,USER_ID)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
 	`INSERT INTO USER (USER_ID, PASSWORD, APP_CODE, ROLE) VALUES('admin', 'admin9768', 'APP1', 'admin')`,
+
+	`DROP TABLE USER_ORG_RIGHT_LINK`,
+	`CREATE TABLE USER_ORG_RIGHT_LINK (ID int(11) NOT NULL AUTO_INCREMENT, APP_CODE VARCHAR(100) DEFAULT NULL, REAL_USER_ID int(11) DEFAULT NULL, USER_ID VARCHAR(100) DEFAULT NULL, ORG_ID int(11) DEFAULT NULL, ORG_GROUP_ID int(11) DEFAULT NULL, LINK_TYPE VARCHAR(32) DEFAULT NULL, RIGHT_NAME VARCHAR(100) DEFAULT NULL, ROLE VARCHAR(100) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, RESV1 varchar(255) DEFAULT NULL, PRIMARY KEY (ID), UNIQUE KEY USER_UN (APP_CODE,REAL_USER_ID,USER_ID,ORG_ID,ORG_GROUP_ID,RIGHT_NAME)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
+	`INSERT INTO USER_ORG_RIGHT_LINK (APP_CODE, USER_ID, RIGHT_NAME) VALUES('APP1', 'admin', 'all')`,
 }
 
 type ConfigType struct {
@@ -65,6 +77,7 @@ type ConfigType struct {
 	DBConnectString string
 	MainSecret      string
 	TokenSecret     string
+	TokenExpire     string
 	TestMode        string
 }
 
@@ -135,7 +148,6 @@ func initSystem() {
 
 // return "" indicates success, otherwise the fail reason
 func checkAuth(appCodeA string, authA string) string {
-	tk.Plvsr(appCodeA, authA)
 	dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
 	if errT != nil {
 		return tk.Spr("failed to connect DB: %v", errT)
@@ -164,10 +176,53 @@ func checkAuth(appCodeA string, authA string) string {
 
 }
 
-func generateToken(appCodeA string, userIDA string) string {
-	strT := appCodeA + "|" + userIDA + "|" + tk.GetNowTimeString()
+var tokenExpireG int = 1
+
+// func generatePrimaryToken(appCodeA string, userIDA string) string {
+// 	strT := configG.TokenSecret + "|" + tk.GetNowTimeString()
+
+// 	return tk.EncryptStringByTXDEF(strT, configG.MainSecret)
+// }
+
+func checkPrimaryAuth(authA string) string {
+	strT := tk.DecryptStringByTXDEF(authA, configG.MainSecret)
+	// tk.LogWithTimeCompact("%v, %v\n", tokenA, configG.MainSecret)
+	// tk.LogWithTimeCompact("%v, %v\n", strT, configG.TokenSecret)
+	// tk.Plvsr(strT, configG.TokenSecret)
+
+	listT := tk.Split(strT, "|")
+
+	if len(listT) < 2 {
+		return "invalid auth"
+	}
+
+	if configG.TokenSecret != listT[0] {
+		return "invalid auth"
+	}
+
+	if listT[1] != tk.GetNowDateString() {
+		return "invalid auth"
+	}
+
+	return ""
+}
+
+func generateToken(appCodeA string, userIDA string, roleA string) string {
+	strT := appCodeA + "|" + userIDA + "|" + roleA + "|" + tk.GetNowTimeString()
 
 	return tk.EncryptStringByTXDEF(strT, configG.TokenSecret)
+}
+
+func getRoleInToken(tokenA string) string {
+	strT := tk.DecryptStringByTXDEF(tokenA, configG.TokenSecret)
+
+	listT := tk.Split(strT, "|")
+
+	if len(listT) < 4 {
+		return ""
+	}
+
+	return listT[2]
 }
 
 func checkToken(appCodeA string, userIDA string, tokenA string) string {
@@ -175,7 +230,7 @@ func checkToken(appCodeA string, userIDA string, tokenA string) string {
 
 	listT := tk.Split(strT, "|")
 
-	if len(listT) < 3 {
+	if len(listT) < 4 {
 		return "invalid token"
 	}
 
@@ -187,12 +242,12 @@ func checkToken(appCodeA string, userIDA string, tokenA string) string {
 		return "invalid token"
 	}
 
-	timeT, errT := tk.StrToTimeByFormat(listT[2], tk.TimeFormatCompact)
+	timeT, errT := tk.StrToTimeByFormat(listT[3], tk.TimeFormatCompact)
 	if errT != nil {
 		return "invalid token"
 	}
 
-	expectTimeT := timeT.Add(time.Minute)
+	expectTimeT := timeT.Add(time.Minute * time.Duration(tokenExpireG))
 
 	if expectTimeT.Before(time.Now()) {
 		return "token expired"
@@ -250,6 +305,70 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 
 		return tk.GenerateJSONPResponse("success", "test1", req)
 
+	case "getToken":
+		authT := paraMapT["auth"]
+
+		authRsT := checkPrimaryAuth(authT)
+
+		if authRsT != "" {
+			appCodeT := paraMapT["appCode"]
+
+			authRsT = checkAuth(appCodeT, authT)
+
+			if authRsT != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+
+			dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+			if errT != nil {
+				return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+			}
+
+			defer dbT.Close()
+
+			userT := paraMapT["user"]
+			if userT == "" {
+				return tk.GenerateJSONPResponse("fail", tk.Spr("empty user id"), req)
+			}
+
+			passT := paraMapT["password"]
+			if passT == "" {
+				return tk.GenerateJSONPResponse("fail", tk.Spr("empty password"), req)
+			}
+
+			sqlRsT, errT := sqltk.QueryDBNSS(dbT, "select * from USER where APP_CODE='"+tk.Replace(appCodeT, "'", "''")+"' and USER_ID='"+tk.Replace(userT, "'", "''")+"'")
+			if errT != nil {
+				return tk.GenerateJSONPResponse("fail", tk.Spr("user %v not exists: %v", userT, errT), req)
+			}
+
+			tk.Pl("%v", sqlRsT)
+
+			if len(sqlRsT) < 2 {
+				return tk.GenerateJSONPResponse("fail", tk.Spr("user %v not exists", userT), req)
+			}
+
+			userMapT := sqltk.OneLineRecordToMap(sqlRsT)
+
+			if passT != userMapT["PASSWORD"] {
+				tk.Plvsr(passT, userMapT["PASSWORD"])
+				return tk.GenerateJSONPResponse("fail", tk.Spr("user id or password not match"), req)
+			}
+
+			return tk.GenerateJSONPResponseWithMore("success", generateToken(appCodeT, userT, userMapT["ROLE"]), req)
+		}
+
+		appCodeT := paraMapT["appCode"]
+		if appCodeT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty app code"), req)
+		}
+
+		userT := paraMapT["user"]
+		if userT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty user"), req)
+		}
+
+		return tk.GenerateJSONPResponse("success", generateToken(appCodeT, userT, "primary"), req)
+
 	case "checkToken":
 		appCodeT := paraMapT["appCode"]
 
@@ -290,7 +409,1759 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 			return tk.GenerateJSONPResponse("fail", rs, req)
 		}
 
-		return tk.GenerateJSONPResponseWithMore("success", "", req, "token", generateToken(appCodeT, userT))
+		return tk.GenerateJSONPResponseWithMore("success", "", req, "token", generateToken(appCodeT, userT, getRoleInToken(tokenT)))
+
+	case "clearApp":
+		authT := paraMapT["auth"]
+
+		authRsT := checkPrimaryAuth(authT)
+
+		if authRsT != "" {
+			return tk.GenerateJSONPResponse("fail", "auth failed: "+authRsT, req)
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		appCodeT := paraMapT["appCode"]
+		if appCodeT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty app code"), req)
+		}
+
+		totalCountT := int64(0)
+
+		_, c2, errT := sqltk.ExecV(dbT, `DELETE FROM APP WHERE CODE='`+sqltk.FormatSQLValue(appCodeT)+`' `)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action(DELETE APP) failed: %v", errT), req)
+		}
+
+		totalCountT += c2
+
+		_, c2, errT = sqltk.ExecV(dbT, `DELETE FROM USER WHERE APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' `)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action(DELETE USER) failed: %v", errT), req)
+		}
+
+		totalCountT += c2
+
+		_, c2, errT = sqltk.ExecV(dbT, `DELETE FROM ORG WHERE APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' `)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action(DELETE ORG) failed: %v", errT), req)
+		}
+
+		totalCountT += c2
+
+		_, c2, errT = sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP WHERE APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' `)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action(DELETE ORG_GROUP) failed: %v", errT), req)
+		}
+
+		totalCountT += c2
+
+		_, c2, errT = sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_LINK WHERE APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' `)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action(DELETE ORG_GROUP_LINK) failed: %v", errT), req)
+		}
+
+		totalCountT += c2
+
+		_, c2, errT = sqltk.ExecV(dbT, `DELETE FROM USER_ORG_RIGHT_LINK WHERE APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' `)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action(DELETE USER_ORG_RIGHT_LINK) failed: %v", errT), req)
+		}
+
+		totalCountT += c2
+
+		return tk.GenerateJSONPResponseWithMore("success", tk.Int64ToStr(totalCountT), req)
+
+	case "addApp":
+		authT := paraMapT["auth"]
+
+		authRsT := checkPrimaryAuth(authT)
+
+		if authRsT != "" {
+			return tk.GenerateJSONPResponse("fail", "auth failed: "+authRsT, req)
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		appCodeT := paraMapT["appCode"]
+		if appCodeT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty app code"), req)
+		}
+
+		appSecretT := paraMapT["appSecret"]
+		if appSecretT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty app secret"), req)
+		}
+
+		appNameT := paraMapT["appName"]
+		appRemarkT := paraMapT["appRemark"]
+		appResv1T := paraMapT["appResv1"]
+
+		c1, c2, errT := sqltk.ExecV(dbT, `INSERT INTO APP (CODE, NAME, SECRET, REMARK, RESV1) VALUES('`+sqltk.FormatSQLValue(appCodeT)+`', '`+sqltk.FormatSQLValue(appNameT)+`', '`+sqltk.FormatSQLValue(appSecretT)+`', '`+sqltk.FormatSQLValue(appRemarkT)+`', '`+sqltk.FormatSQLValue(appResv1T)+`') `)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if c2 < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no records affected"), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", tk.Int64ToStr(c1), req)
+
+	case "addUser":
+		authT := paraMapT["auth"]
+
+		appCodeT := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		userT := paraMapT["user"]
+		if userT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty user id"), req)
+		}
+
+		passT := paraMapT["password"]
+		if passT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty password"), req)
+		}
+
+		userNameT := paraMapT["name"]
+		emailT := paraMapT["email"]
+		mobileT := paraMapT["mobile"]
+		roleT := paraMapT["role"]
+		statusT := paraMapT["status"]
+		descriptionT := paraMapT["description"]
+		remarkT := paraMapT["remark"]
+		resv1T := paraMapT["resv1"]
+		resv2T := paraMapT["resv2"]
+		resv3T := paraMapT["resv3"]
+
+		c1, c2, errT := sqltk.ExecV(dbT, `INSERT INTO USER (APP_CODE, USER_ID, PASSWORD, NAME, EMAIL, MOBILE, ROLE, USER_STATUS, DESCRIPTION, REMARK, RESV1, RESV2, RESV3) VALUES('`+sqltk.FormatSQLValue(appCodeT)+`', '`+sqltk.FormatSQLValue(userT)+`', '`+sqltk.FormatSQLValue(passT)+`', '`+sqltk.FormatSQLValue(userNameT)+`', '`+sqltk.FormatSQLValue(emailT)+`', '`+sqltk.FormatSQLValue(mobileT)+`', '`+sqltk.FormatSQLValue(roleT)+`', '`+sqltk.FormatSQLValue(statusT)+`', '`+sqltk.FormatSQLValue(descriptionT)+`', '`+sqltk.FormatSQLValue(remarkT)+`', '`+sqltk.FormatSQLValue(resv1T)+`', '`+sqltk.FormatSQLValue(resv2T)+`', '`+sqltk.FormatSQLValue(resv3T)+`') `)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if c2 < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no records affected"), req)
+		}
+
+		linksT := tk.Trim(paraMapT["links"])
+
+		var linksAryT []map[string]string = nil
+
+		if linksT != "" {
+			linksAryT = tk.JSONToMapStringStringArray(linksT)
+		}
+
+		if linksAryT != nil {
+			for _, v := range linksAryT {
+				vi := tk.StrToInt(tk.Trim(v["ID"]), -1)
+				if vi < 0 {
+					return tk.GenerateJSONPResponse("fail", tk.Spr("invalid links item: %v", v), req)
+				}
+
+				typeT := tk.Trim(v["Type"])
+
+				rightNameT := tk.Trim(v["Right"])
+
+				var sqlT string
+
+				if typeT == "group" {
+					sqlT = `INSERT INTO USER_ORG_RIGHT_LINK (APP_CODE, LINK_TYPE, REAL_USER_ID, USER_ID, ORG_GROUP_ID, RIGHT_NAME) VALUES('` + sqltk.FormatSQLValue(appCodeT) + `', 'group', ` + tk.Int64ToStr(c1) + `, '` + userT + `', ` + tk.IntToStr(vi) + `, '` + sqltk.FormatSQLValue(rightNameT) + `')`
+				} else {
+					sqlT = `INSERT INTO USER_ORG_RIGHT_LINK (APP_CODE, LINK_TYPE, REAL_USER_ID, USER_ID, ORG_ID, RIGHT_NAME) VALUES('` + sqltk.FormatSQLValue(appCodeT) + `', '', ` + tk.Int64ToStr(c1) + `, '` + userT + `', ` + tk.IntToStr(vi) + `, '` + sqltk.FormatSQLValue(rightNameT) + `')`
+				}
+
+				_, c2i, errT := sqltk.ExecV(dbT, sqlT)
+
+				if errT != nil {
+					return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+				}
+
+				if c2i < 1 {
+					return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed, no records affected for links item: %v", v), req)
+				}
+
+			}
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", tk.Int64ToStr(c1), req)
+
+	case "modifyUser":
+		authT := paraMapT["auth"]
+
+		appCodeT, appCodeOK := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		var bufT strings.Builder
+
+		if appCodeOK {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `'`)
+		}
+
+		userIDT, ok := paraMapT["userID"]
+		if !ok || userIDT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty user id"), req)
+		}
+
+		userT, ok := paraMapT["user"]
+		if ok {
+			if userT == "" {
+				return tk.GenerateJSONPResponse("fail", tk.Spr("empty user account name"), req)
+			}
+
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`USER_ID='` + sqltk.FormatSQLValue(userT) + `'`)
+		}
+
+		passT, ok := paraMapT["password"]
+		if ok {
+			if passT == "" {
+				return tk.GenerateJSONPResponse("fail", tk.Spr("empty password"), req)
+			}
+
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`PASSWORD='` + sqltk.FormatSQLValue(passT) + `'`)
+		}
+
+		userNameT, ok := paraMapT["name"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`NAME='` + sqltk.FormatSQLValue(userNameT) + `'`)
+		}
+
+		emailT, ok := paraMapT["email"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`EMAIL='` + sqltk.FormatSQLValue(emailT) + `'`)
+		}
+
+		mobileT, ok := paraMapT["mobile"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`MOBILE='` + sqltk.FormatSQLValue(mobileT) + `'`)
+		}
+
+		roleT, ok := paraMapT["role"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`ROLE='` + sqltk.FormatSQLValue(roleT) + `'`)
+		}
+
+		statusT, ok := paraMapT["status"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`USER_STATUS='` + sqltk.FormatSQLValue(statusT) + `'`)
+		}
+
+		descriptionT, ok := paraMapT["description"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`DESCRIPTION='` + sqltk.FormatSQLValue(descriptionT) + `'`)
+		}
+
+		remarkT, ok := paraMapT["remark"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`REMARK='` + sqltk.FormatSQLValue(remarkT) + `'`)
+		}
+
+		resv1T, ok := paraMapT["resv1"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`RESV1='` + sqltk.FormatSQLValue(resv1T) + `'`)
+		}
+
+		resv2T, ok := paraMapT["resv2"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`RESV2='` + sqltk.FormatSQLValue(resv2T) + `'`)
+		}
+
+		resv3T, ok := paraMapT["resv3"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`RESV3='` + sqltk.FormatSQLValue(resv3T) + `'`)
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		// c1, c2, errT := sqltk.ExecV(dbT, `INSERT INTO USER (APP_CODE, USER_ID, PASSWORD, NAME, EMAIL, MOBILE, ROLE, USER_STATUS, DESCRIPTION, REMARK, RESV1, RESV2, RESV3) VALUES('`+sqltk.FormatSQLValue(appCodeT)+`', '`+sqltk.FormatSQLValue(userT)+`', '`+sqltk.FormatSQLValue(passT)+`', '`+sqltk.FormatSQLValue(userNameT)+`', '`+sqltk.FormatSQLValue(emailT)+`', '`+sqltk.FormatSQLValue(mobileT)+`', '`+sqltk.FormatSQLValue(roleT)+`', '`+sqltk.FormatSQLValue(statusT)+`', '`+sqltk.FormatSQLValue(descriptionT)+`', '`+sqltk.FormatSQLValue(remarkT)+`', '`+sqltk.FormatSQLValue(resv1T)+`', '`+sqltk.FormatSQLValue(resv2T)+`', '`+sqltk.FormatSQLValue(resv3T)+`') `)
+
+		// if errT != nil {
+		// 	return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		// }
+
+		// if c2 < 1 {
+		// 	return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no records affected"), req)
+		// }
+
+		allowDuplicateNameT := paraMapT["allowDupName"]
+		if allowDuplicateNameT != "true" && userNameT != "" {
+			sqlRsT, errT := sqltk.QueryDBCount(dbT, `SELECT COUNT(*) FROM USER WHERE USER_ID='`+sqltk.FormatSQLValue(userNameT)+`' AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' AND ID<>`+userIDT)
+			if errT != nil {
+				return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+			}
+
+			if sqlRsT > 0 {
+				return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "record already exists"), req)
+			}
+		}
+
+		_, c2, errT := sqltk.ExecV(dbT, `UPDATE USER SET `+bufT.String()+` WHERE ID=`+sqltk.FormatSQLValue(userIDT)+`;`)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if c2 < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no rows affects"), req)
+		}
+
+		_, _, errT = sqltk.ExecV(dbT, `DELETE FROM USER_ORG_RIGHT_LINK WHERE REAL_USER_ID=`+userIDT+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		linksT := tk.Trim(paraMapT["links"])
+
+		var linksAryT []map[string]string = nil
+
+		if linksT != "" {
+			linksAryT = tk.JSONToMapStringStringArray(linksT)
+		}
+
+		if linksAryT != nil {
+			for _, v := range linksAryT {
+				vi := tk.StrToInt(tk.Trim(v["ID"]), -1)
+				if vi < 0 {
+					return tk.GenerateJSONPResponse("fail", tk.Spr("invalid links item: %v", v), req)
+				}
+
+				typeT := tk.Trim(v["Type"])
+
+				rightNameT := tk.Trim(v["Right"])
+
+				var sqlT string
+
+				if typeT == "group" {
+					sqlT = `INSERT INTO USER_ORG_RIGHT_LINK (APP_CODE, LINK_TYPE, REAL_USER_ID, USER_ID, ORG_GROUP_ID, RIGHT_NAME) VALUES('` + sqltk.FormatSQLValue(appCodeT) + `', 'group', ` + userIDT + `, '` + userT + `', ` + tk.IntToStr(vi) + `, '` + sqltk.FormatSQLValue(rightNameT) + `')`
+				} else {
+					sqlT = `INSERT INTO USER_ORG_RIGHT_LINK (APP_CODE, LINK_TYPE, REAL_USER_ID, USER_ID, ORG_ID, RIGHT_NAME) VALUES('` + sqltk.FormatSQLValue(appCodeT) + `', '', ` + userIDT + `, '` + userT + `', ` + tk.IntToStr(vi) + `, '` + sqltk.FormatSQLValue(rightNameT) + `')`
+				}
+
+				_, c2i, errT := sqltk.ExecV(dbT, sqlT)
+
+				if errT != nil {
+					return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+				}
+
+				if c2i < 1 {
+					return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed, no records affected for links item: %v", v), req)
+				}
+
+			}
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", "", req)
+
+	case "resetPassword":
+		authT := paraMapT["auth"]
+
+		appCodeT, appCodeOK := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		var bufT strings.Builder
+
+		if appCodeOK {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `'`)
+		}
+
+		userIDT, ok := paraMapT["userID"]
+		if !ok || userIDT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty user id"), req)
+		}
+
+		// passT, ok := paraMapT["password"]
+		// if ok {
+		// 	if passT == "" {
+		// 		return tk.GenerateJSONPResponse("fail", tk.Spr("empty password"), req)
+		// 	}
+
+		// 	if bufT.Len() > 0 {
+		// 		bufT.WriteString(", ")
+		// 	}
+
+		// 	bufT.WriteString(`PASSWORD='` + sqltk.FormatSQLValue(passT) + `'`)
+		// }
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		passwordT := tk.GenerateRandomString(6, 12, true, true, true, false, false, false)
+
+		_, c2, errT := sqltk.ExecV(dbT, `UPDATE USER SET PASSWORD='`+tk.MD5Encrypt(passwordT)+`' WHERE ID=`+sqltk.FormatSQLValue(userIDT)+`;`)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if c2 < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no rows affects"), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", passwordT, req)
+
+	case "setPassword":
+		authT := paraMapT["auth"]
+
+		appCodeT, appCodeOK := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		var bufT strings.Builder
+
+		if appCodeOK {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `'`)
+		}
+
+		userIDT, ok := paraMapT["userID"]
+		if !ok || userIDT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty user id"), req)
+		}
+
+		passT := paraMapT["password"]
+		if passT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty password"), req)
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		_, c2, errT := sqltk.ExecV(dbT, `UPDATE USER SET PASSWORD='`+passT+`' WHERE ID=`+sqltk.FormatSQLValue(userIDT)+`;`)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if c2 < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no rows affects"), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", "", req)
+
+	case "disableUser":
+		authT := paraMapT["auth"]
+
+		appCodeT, appCodeOK := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		var bufT strings.Builder
+
+		if appCodeOK {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `'`)
+		}
+
+		userIDT, ok := paraMapT["userID"]
+		if !ok || userIDT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty user id"), req)
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		_, c2, errT := sqltk.ExecV(dbT, `UPDATE USER SET USER_STATUS='disabled' WHERE ID=`+sqltk.FormatSQLValue(userIDT)+`;`)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if c2 < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no rows affects"), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", "", req)
+
+	case "enableUser":
+		authT := paraMapT["auth"]
+
+		appCodeT, appCodeOK := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		var bufT strings.Builder
+
+		if appCodeOK {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `'`)
+		}
+
+		userIDT, ok := paraMapT["userID"]
+		if !ok || userIDT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty user id"), req)
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		_, c2, errT := sqltk.ExecV(dbT, `UPDATE USER SET USER_STATUS='' WHERE ID=`+sqltk.FormatSQLValue(userIDT)+`;`)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if c2 < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no rows affects"), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", "", req)
+
+	case "removeUser":
+		authT := paraMapT["auth"]
+
+		appCodeT, appCodeOK := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		var bufT strings.Builder
+
+		if appCodeOK {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `'`)
+		}
+
+		userIDT, ok := paraMapT["userID"]
+		if !ok || userIDT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty user id"), req)
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		_, c2, errT := sqltk.ExecV(dbT, `DELETE FROM USER WHERE ID=`+sqltk.FormatSQLValue(userIDT)+`;`)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if c2 < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no rows affects"), req)
+		}
+
+		_, c2, errT = sqltk.ExecV(dbT, `DELETE FROM USER_ORG_RIGHT_LINK WHERE REAL_USER_ID=`+sqltk.FormatSQLValue(userIDT)+`;`)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", "", req)
+
+	case "addOrg":
+		authT := paraMapT["auth"]
+
+		appCodeT := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		orgNameT := paraMapT["orgName"]
+		if orgNameT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty org name"), req)
+		}
+
+		orgCodeT := paraMapT["orgCode"]
+		remarkT := paraMapT["remark"]
+		descriptionT := paraMapT["description"]
+		upIDT := paraMapT["upID"]
+		if upIDT == "" {
+			upIDT = "NULL"
+		}
+
+		typeT := paraMapT["type"]
+		contactT := paraMapT["contact"]
+		addressT := paraMapT["address"]
+		upCodeT := paraMapT["upCode"]
+		upNameT := paraMapT["upName"]
+
+		allowDuplicateNameT := paraMapT["allowDupName"]
+		if allowDuplicateNameT != "true" {
+			sqlRsT, errT := sqltk.QueryDBCount(dbT, `SELECT COUNT(*) FROM ORG WHERE NAME='`+sqltk.FormatSQLValue(orgNameT)+`' AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+			if errT != nil {
+				return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+			}
+
+			if sqlRsT > 0 {
+				return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "record already exists"), req)
+			}
+		}
+
+		c1, c2, errT := sqltk.ExecV(dbT, `INSERT INTO ORG (APP_CODE, NAME, CODE, DESCRIPTION, REMARK, UP_ID, TYPE, CONTACT, ADDRESS, UP_CODE, UP_NAME) VALUES('`+sqltk.FormatSQLValue(appCodeT)+`', '`+sqltk.FormatSQLValue(orgNameT)+`', '`+sqltk.FormatSQLValue(orgCodeT)+`', '`+sqltk.FormatSQLValue(descriptionT)+`', '`+sqltk.FormatSQLValue(remarkT)+`', `+upIDT+`, '`+sqltk.FormatSQLValue(typeT)+`', '`+sqltk.FormatSQLValue(contactT)+`', '`+sqltk.FormatSQLValue(addressT)+`', '`+sqltk.FormatSQLValue(upCodeT)+`', '`+sqltk.FormatSQLValue(upNameT)+`') `)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if c2 < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no records affected"), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", tk.Int64ToStr(c1), req)
+
+	case "addOrgGroup":
+		authT := paraMapT["auth"]
+
+		appCodeT := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		groupNameT := paraMapT["groupName"]
+		if groupNameT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty org group name"), req)
+		}
+
+		groupCodeT := paraMapT["groupCode"]
+		remarkT := paraMapT["remark"]
+		descriptionT := paraMapT["description"]
+		relT := paraMapT["rel"]
+		if relT == "" {
+			relT = "NULL"
+		} else {
+			relT = `'` + sqltk.FormatSQLValue(relT) + `'`
+		}
+
+		linksT := tk.Trim(paraMapT["links"])
+
+		allowDuplicateNameT := paraMapT["allowDupName"]
+		if allowDuplicateNameT != "true" {
+			sqlRsT, errT := sqltk.QueryDBCount(dbT, `SELECT COUNT(*) FROM ORG_GROUP WHERE NAME='`+sqltk.FormatSQLValue(groupNameT)+`' AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+			if errT != nil {
+				return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+			}
+
+			if sqlRsT > 0 {
+				return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "record already exists"), req)
+			}
+		}
+
+		c1, c2, errT := sqltk.ExecV(dbT, `INSERT INTO ORG_GROUP (APP_CODE, NAME, CODE, DESCRIPTION, REMARK, REL) VALUES('`+sqltk.FormatSQLValue(appCodeT)+`', '`+sqltk.FormatSQLValue(groupNameT)+`', '`+sqltk.FormatSQLValue(groupCodeT)+`', '`+sqltk.FormatSQLValue(descriptionT)+`', '`+sqltk.FormatSQLValue(remarkT)+`', `+relT+`) `)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if c2 < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no records affected"), req)
+		}
+
+		var linksAryT []string = nil
+
+		if linksT != "" {
+			linksAryT = tk.JSONToStringArray(linksT)
+		}
+
+		if linksAryT != nil {
+			for _, v := range linksAryT {
+				vi := tk.StrToInt(v, -1)
+				if vi < 0 {
+					return tk.GenerateJSONPResponse("fail", tk.Spr("invalid links item: %v", v), req)
+				}
+
+				_, c2i, errT := sqltk.ExecV(dbT, `INSERT INTO ORG_GROUP_LINK (APP_CODE, ORG_GROUP_ID, ORG_ID) VALUES('`+sqltk.FormatSQLValue(appCodeT)+`', `+tk.Int64ToStr(c1)+`, `+tk.IntToStr(vi)+`)`)
+
+				if errT != nil {
+					return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+				}
+
+				if c2i < 1 {
+					return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed, no records affected for links item: %v", v), req)
+				}
+
+			}
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", tk.Int64ToStr(c1), req)
+
+	case "removeOrgs":
+		authT := paraMapT["auth"]
+
+		appCodeT := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		orgListStrT := paraMapT["orgList"]
+		if orgListStrT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty org list"), req)
+		}
+
+		var orgListT []string
+
+		errT = tk.LoadJSONFromString(orgListStrT, &orgListT)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("invalid org id list"), req)
+		}
+
+		failListT := make([]string, 0)
+
+		for _, v := range orgListT {
+			_, c2, errT := sqltk.ExecV(dbT, `DELETE FROM ORG WHERE ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+
+			if errT != nil {
+				tk.Pl("failed to remove org: %v(%v)", errT, `DELETE FROM ORG WHERE ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+				failListT = append(failListT, v)
+				continue
+			}
+
+			if c2 < 1 {
+				tk.Pl("failed to remove org: %v(%v)", "no rows infected", `DELETE FROM ORG WHERE ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+				failListT = append(failListT, v)
+				continue
+			}
+
+			_, c2, errT = sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_LINK WHERE ORG_ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+
+			if errT != nil {
+				tk.Pl("failed to remove org: %v(%v)", errT, `DELETE FROM ORG_GROUP_LINK WHERE ORG_ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+				failListT = append(failListT, v)
+				continue
+			}
+
+			if c2 < 1 {
+				tk.Pl("failed to remove org: %v(%v)", "no rows infected", `DELETE FROM ORG_GROUP_LINK WHERE ORG_ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+				failListT = append(failListT, v)
+				continue
+			}
+
+		}
+
+		if len(failListT) > 0 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed for the following ORG(s): %v", strings.Join(failListT, ",")), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", tk.IntToStr(len(orgListT)), req)
+
+	case "removeOrgGroups":
+		authT := paraMapT["auth"]
+
+		appCodeT := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		groupListStrT := paraMapT["groupList"]
+		if groupListStrT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty org group list"), req)
+		}
+
+		var groupListT []string
+
+		errT = tk.LoadJSONFromString(groupListStrT, &groupListT)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("invalid org group id list"), req)
+		}
+
+		failListT := make([]string, 0)
+
+		for _, v := range groupListT {
+			_, c2, errT := sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP WHERE ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+
+			if errT != nil {
+				tk.Pl("failed to remove org: %v(%v)", errT, `DELETE FROM ORG WHERE ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+				failListT = append(failListT, v)
+				continue
+			}
+
+			if c2 < 1 {
+				tk.Pl("failed to remove org: %v(%v)", "no rows infected", `DELETE FROM ORG_GROUP WHERE ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+				failListT = append(failListT, v)
+				continue
+			}
+
+			_, c2, errT = sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_LINK WHERE ORG_GROUP_ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+
+			if errT != nil {
+				tk.Pl("failed to remove org: %v(%v)", errT, `DELETE FROM ORG_GROUP_LINK WHERE ORG_GROUP_ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+				failListT = append(failListT, v)
+				continue
+			}
+
+			if c2 < 1 {
+				tk.Pl("failed to remove org: %v(%v)", "no rows infected", `DELETE FROM ORG_GROUP_LINK WHERE ORG_GROUP_ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+				failListT = append(failListT, v)
+				continue
+			}
+		}
+
+		if len(failListT) > 0 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed for the following ORG group(s): %v", strings.Join(failListT, ",")), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", tk.IntToStr(len(groupListT)), req)
+
+	case "removeOrgGroup":
+		authT := paraMapT["auth"]
+
+		appCodeT := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		groupIDT := tk.Trim(paraMapT["groupID"])
+		if groupIDT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty org group id"), req)
+		}
+
+		_, c2, errT := sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP WHERE ID=`+groupIDT+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to remove org group: %v(%v)", groupIDT, errT), req)
+		}
+
+		if c2 < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to remove org group: %v(%v)", groupIDT, "no row affected"), req)
+		}
+
+		_, c2, errT = sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_LINK WHERE ORG_GROUP_ID=`+groupIDT+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to remove org group: %v(%v)", groupIDT, errT), req)
+		}
+
+		if c2 < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to remove org group: %v(%v)", groupIDT, "no records affected"), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", "1", req)
+
+	case "removeOrg":
+		authT := paraMapT["auth"]
+
+		appCodeT := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		orgIDT := tk.Trim(paraMapT["orgID"])
+		if orgIDT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty org id"), req)
+		}
+
+		_, c2, errT := sqltk.ExecV(dbT, `DELETE FROM ORG WHERE ID=`+orgIDT+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to remove org: %v(%v)", orgIDT, errT), req)
+		}
+
+		if c2 < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to remove org: %v(%v)", orgIDT, "no row affected"), req)
+		}
+
+		_, c2, errT = sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_LINK WHERE ORG_ID=`+orgIDT+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to remove org link: %v(%v)", orgIDT, errT), req)
+		}
+
+		if c2 < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to remove org link: %v(%v)", orgIDT, "no records affected"), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", "1", req)
+
+	case "clearOrgs":
+		authT := paraMapT["auth"]
+
+		appCodeT := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		typeT := tk.Trim(paraMapT["type"])
+
+		var sqlT string
+
+		if typeT != "" {
+			sqlT = `DELETE FROM ORG WHERE APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `' WHERE TYPE='` + sqltk.FormatSQLValue(typeT) + `'`
+		} else {
+			sqlT = `DELETE FROM ORG WHERE APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `'`
+		}
+
+		_, _, errT = sqltk.ExecV(dbT, sqlT)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		// if c2 < 1 {
+		// 	return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no rows affects"), req)
+		// }
+
+		_, _, errT = sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_LINK WHERE APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		// if c2 < 1 {
+		// 	return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no rows affects"), req)
+		// }
+
+		return tk.GenerateJSONPResponseWithMore("success", "", req)
+
+	case "modifyOrg":
+		authT := paraMapT["auth"]
+
+		appCodeT, appCodeOK := paraMapT["appCode"]
+		appCodeT = tk.Trim(appCodeT)
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		orgIDT := tk.Trim(paraMapT["orgID"])
+		if orgIDT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty org id"), req)
+		}
+
+		var bufT strings.Builder
+
+		if appCodeOK {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `'`)
+		}
+
+		orgNameT, ok := paraMapT["orgName"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`NAME='` + sqltk.FormatSQLValue(orgNameT) + `'`)
+		}
+
+		orgCodeT, ok := paraMapT["orgCode"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`CODE='` + sqltk.FormatSQLValue(orgCodeT) + `'`)
+		}
+
+		remarkT, ok := paraMapT["remark"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`REMARK='` + sqltk.FormatSQLValue(remarkT) + `'`)
+		}
+
+		descriptionT, ok := paraMapT["description"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`DESCRIPTION='` + sqltk.FormatSQLValue(descriptionT) + `'`)
+		}
+
+		typeT, ok := paraMapT["type"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`TYPE='` + sqltk.FormatSQLValue(typeT) + `'`)
+		}
+
+		contactT, ok := paraMapT["contact"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`CONTACT='` + sqltk.FormatSQLValue(contactT) + `'`)
+		}
+
+		addressT, ok := paraMapT["address"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`ADDRESS='` + sqltk.FormatSQLValue(addressT) + `'`)
+		}
+
+		upCodeT, ok := paraMapT["upCode"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`UP_CODE='` + sqltk.FormatSQLValue(upCodeT) + `'`)
+		}
+
+		upNameT, ok := paraMapT["upName"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`UP_NAME='` + sqltk.FormatSQLValue(upNameT) + `'`)
+		}
+
+		upIDT, ok := paraMapT["upID"]
+		if upIDT == "" {
+			upIDT = "NULL"
+		}
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`UP_ID=` + sqltk.FormatSQLValue(upIDT) + ``)
+		}
+
+		relT, ok := paraMapT["rel"]
+		if relT == "" {
+			relT = "NULL"
+		} else {
+			relT = `'` + sqltk.FormatSQLValue(relT) + `'`
+		}
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`REL='` + sqltk.FormatSQLValue(relT) + `'`)
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		allowDuplicateNameT := paraMapT["allowDupName"]
+		if allowDuplicateNameT != "true" {
+			sqlRsT, errT := sqltk.QueryDBCount(dbT, `SELECT COUNT(*) FROM ORG WHERE NAME='`+sqltk.FormatSQLValue(orgNameT)+`' AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' AND ID<>`+orgIDT)
+			if errT != nil {
+				return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+			}
+
+			if sqlRsT > 0 {
+				return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "record already exists"), req)
+			}
+		}
+
+		_, c2, errT := sqltk.ExecV(dbT, `UPDATE ORG SET `+bufT.String()+` WHERE ID=`+sqltk.FormatSQLValue(orgIDT)+`;`)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if c2 < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no rows affects"), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", "", req)
+
+	case "modifyOrgGroup":
+		authT := paraMapT["auth"]
+
+		appCodeT, appCodeOK := paraMapT["appCode"]
+		appCodeT = tk.Trim(appCodeT)
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		groupIDT := tk.Trim(paraMapT["groupID"])
+		if groupIDT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty org group id"), req)
+		}
+
+		var bufT strings.Builder
+
+		if appCodeOK {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `'`)
+		}
+
+		groupNameT, ok := paraMapT["groupName"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`NAME='` + sqltk.FormatSQLValue(groupNameT) + `'`)
+		}
+
+		groupCodeT, ok := paraMapT["groupCode"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`CODE='` + sqltk.FormatSQLValue(groupCodeT) + `'`)
+		}
+
+		remarkT, ok := paraMapT["remark"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`REMARK='` + sqltk.FormatSQLValue(remarkT) + `'`)
+		}
+
+		descriptionT, ok := paraMapT["description"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`DESCRIPTION='` + sqltk.FormatSQLValue(descriptionT) + `'`)
+		}
+
+		relT, ok := paraMapT["rel"]
+		if relT == "" {
+			relT = "NULL"
+		} else {
+			relT = `'` + sqltk.FormatSQLValue(relT) + `'`
+		}
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`REL='` + sqltk.FormatSQLValue(relT) + `'`)
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		allowDuplicateNameT := paraMapT["allowDupName"]
+		if allowDuplicateNameT != "true" {
+			sqlRsT, errT := sqltk.QueryDBCount(dbT, `SELECT COUNT(*) FROM ORG_GROUP WHERE NAME='`+sqltk.FormatSQLValue(groupNameT)+`' AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' AND ID<>`+groupIDT)
+			if errT != nil {
+				return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+			}
+
+			if sqlRsT > 0 {
+				return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "record already exists"), req)
+			}
+		}
+
+		_, c2, errT := sqltk.ExecV(dbT, `UPDATE ORG_GROUP SET `+bufT.String()+` WHERE ID=`+sqltk.FormatSQLValue(groupIDT)+`;`)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if c2 < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no rows affects"), req)
+		}
+
+		_, _, errT = sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_LINK WHERE ORG_GROUP_ID=`+groupIDT+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		linksT := tk.Trim(paraMapT["links"])
+
+		var linksAryT []string = nil
+
+		if linksT != "" {
+			linksAryT = tk.JSONToStringArray(linksT)
+		}
+
+		if linksAryT != nil {
+			for _, v := range linksAryT {
+				vi := tk.StrToInt(v, -1)
+				if vi < 0 {
+					return tk.GenerateJSONPResponse("fail", tk.Spr("invalid links item: %v", v), req)
+				}
+
+				_, c2i, errT := sqltk.ExecV(dbT, `INSERT INTO ORG_GROUP_LINK (APP_CODE, ORG_GROUP_ID, ORG_ID) VALUES('`+sqltk.FormatSQLValue(appCodeT)+`', `+groupIDT+`, `+tk.IntToStr(vi)+`)`)
+
+				if errT != nil {
+					return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+				}
+
+				if c2i < 1 {
+					return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed, no records affected for links item: %v", v), req)
+				}
+
+			}
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", "", req)
+
+	case "getOrgList":
+		authT := paraMapT["auth"]
+
+		appCodeT := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		typeT := tk.Trim(paraMapT["type"])
+
+		var sqlT string
+
+		if typeT != "" {
+			sqlT = `SELECT * FROM ORG WHERE APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `' WHERE TYPE='` + sqltk.FormatSQLValue(typeT) + `'`
+		} else {
+			sqlT = `SELECT * FROM ORG WHERE APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `'`
+		}
+
+		sqlRsT, errT := sqltk.QueryDBNSS(dbT, sqlT)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if len(sqlRsT) < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action length failed: %v", len(sqlRsT)), req)
+		}
+
+		if tk.ToLower(paraMapT["format"]) == "mss" {
+			return tk.GenerateJSONPResponseWithMore("success", tk.TableToMSSJSON(sqlRsT), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", tk.ObjectToJSON(sqlRsT), req)
+
+	case "getUserList":
+		authT := paraMapT["auth"]
+
+		appCodeT := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		sqlRsT, errT := sqltk.QueryDBNSS(dbT, `SELECT * FROM USER WHERE APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if len(sqlRsT) < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action length failed: %v", len(sqlRsT)), req)
+		}
+
+		if tk.ToLower(paraMapT["format"]) == "mss" {
+			return tk.GenerateJSONPResponseWithMore("success", tk.TableToMSSJSON(sqlRsT), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", tk.ObjectToJSON(sqlRsT), req)
+
+	case "getOrgGroupList":
+		authT := paraMapT["auth"]
+
+		appCodeT := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		sqlRsT, errT := sqltk.QueryDBNSS(dbT, `SELECT * FROM ORG_GROUP WHERE APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if len(sqlRsT) < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action length failed: %v", len(sqlRsT)), req)
+		}
+
+		if tk.ToLower(paraMapT["format"]) == "mss" {
+			return tk.GenerateJSONPResponseWithMore("success", tk.TableToMSSJSON(sqlRsT), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", tk.ObjectToJSON(sqlRsT), req)
+
+	case "getOrgGroupLinks":
+		authT := paraMapT["auth"]
+
+		appCodeT := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		sqlRsT, errT := sqltk.QueryDBNSS(dbT, `SELECT * FROM ORG_GROUP_LINK WHERE APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if len(sqlRsT) < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action length failed: %v", len(sqlRsT)), req)
+		}
+
+		if tk.ToLower(paraMapT["format"]) == "mss" {
+			return tk.GenerateJSONPResponseWithMore("success", tk.TableToMSSJSON(sqlRsT), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", tk.ObjectToJSON(sqlRsT), req)
+
+	case "getOrgGroupLinksGroup":
+		authT := paraMapT["auth"]
+
+		appCodeT := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		sqlRsT, errT := sqltk.QueryDBNSS(dbT, `SELECT c.APP_CODE, a.ORG_GROUP_ID, c.NAME as ORG_GROUP_NAME, c.CODE as ORG_GROUP_CODE, c.REMARK as REMARK, group_concat(b.NAME order by b.NAME DESC SEPARATOR ',') as ORGS from ORG_GROUP_LINK a, ORG b, ORG_GROUP c WHERE c.APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' and a.ORG_ID=b.ID and a.ORG_GROUP_ID=c.ID group by a.ORG_GROUP_ID`)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if len(sqlRsT) < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action length failed: %v", len(sqlRsT)), req)
+		}
+
+		if tk.ToLower(paraMapT["format"]) == "mss" {
+			return tk.GenerateJSONPResponseWithMore("success", tk.TableToMSSJSON(sqlRsT), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", tk.ObjectToJSON(sqlRsT), req)
+
+	case "getOrg":
+		authT := paraMapT["auth"]
+
+		appCodeT := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		orgIDT := tk.Trim(paraMapT["orgID"])
+		if orgIDT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty org id"), req)
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		sqlRsT, errT := sqltk.QueryDBNSS(dbT, `SELECT * FROM ORG WHERE ID='`+sqltk.FormatSQLValue(orgIDT)+`'`)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if len(sqlRsT) < 2 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("no record"), req)
+		}
+
+		if tk.ToLower(paraMapT["format"]) == "mss" {
+			return tk.GenerateJSONPResponseWithMore("success", tk.ToJSONX(sqltk.OneLineRecordToMap(sqlRsT), "-default=", "-sort"), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", tk.ObjectToJSON(sqlRsT), req)
+
+	case "getOrgGroup":
+		authT := paraMapT["auth"]
+
+		appCodeT := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		groupIDT := tk.Trim(paraMapT["groupID"])
+		if groupIDT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty group id"), req)
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		sqlRsT, errT := sqltk.QueryDBNSS(dbT, `SELECT c.APP_CODE, a.ORG_GROUP_ID, c.NAME as ORG_GROUP_NAME, c.CODE as ORG_GROUP_CODE, c.REMARK as REMARK, group_concat(b.NAME order by b.NAME DESC SEPARATOR ',') as ORGS, group_concat(b.ID order by b.ID SEPARATOR ',') as ORGIDS from ORG_GROUP_LINK a, ORG b, ORG_GROUP c WHERE c.APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' and a.ORG_GROUP_ID=`+sqltk.FormatSQLValue(groupIDT)+` and a.ORG_ID=b.ID and a.ORG_GROUP_ID=c.ID group by a.ORG_GROUP_ID`)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if len(sqlRsT) < 2 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("no record"), req)
+		}
+
+		if tk.ToLower(paraMapT["format"]) == "mss" {
+			return tk.GenerateJSONPResponseWithMore("success", tk.ToJSONX(sqltk.OneLineRecordToMap(sqlRsT), "-default=", "-sort"), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", tk.ObjectToJSON(sqlRsT), req)
+
+	case "getUserInfo":
+		authT := paraMapT["auth"]
+
+		appCodeT := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		userIDT := tk.Trim(paraMapT["userID"])
+		if userIDT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty user id"), req)
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		sqlRsT, errT := sqltk.QueryDBNSS(dbT, `SELECT ID, APP_CODE, ID_TYPE, USER_ID, NAME, EMAIL, MOBILE, ROLE, USER_STATUS, REMARK from USER WHERE APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' AND ID=`+userIDT+``)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if len(sqlRsT) < 2 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("no record"), req)
+		}
+
+		if tk.ToLower(paraMapT["format"]) == "mss" {
+			return tk.GenerateJSONPResponseWithMore("success", tk.ToJSONX(sqltk.OneLineRecordToMap(sqlRsT), "-default=", "-sort"), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", tk.ObjectToJSON(sqlRsT), req)
+
+	case "getUserInfoX":
+		authT := paraMapT["auth"]
+
+		appCodeT := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		userIDT := tk.Trim(paraMapT["userID"])
+		if userIDT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty user id"), req)
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		sqlRsT, errT := sqltk.QueryDBNSS(dbT, `SELECT ID, APP_CODE, ID_TYPE, USER_ID, NAME, EMAIL, MOBILE, ROLE, USER_STATUS, REMARK from USER WHERE APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' AND ID=`+userIDT+``)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if len(sqlRsT) < 2 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("no record"), req)
+		}
+
+		mapT := sqltk.OneLineRecordToMap(sqlRsT)
+
+		sqlRsT, errT = sqltk.QueryDBNSS(dbT, `SELECT * from USER_ORG_RIGHT_LINK WHERE APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' AND REAL_USER_ID=`+userIDT+``)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if len(sqlRsT) < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("no record"), req)
+		}
+
+		mapT["Links"] = tk.ToJSONX(sqltk.RecordsToMapArray(sqlRsT))
+
+		return tk.GenerateJSONPResponseWithMore("success", tk.ToJSONX(mapT, "-default=", "-sort"), req)
 
 	case "login":
 		authT := paraMapT["auth"]
@@ -299,7 +2170,7 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 		authRsT := checkAuth(appCodeT, authT)
 
 		if authRsT != "" {
-			return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			return tk.GenerateJSONPResponse("fail", "auth failed: "+authRsT, req)
 		}
 
 		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
@@ -339,7 +2210,7 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 
 		delete(userMapT, "PASSWORD")
 
-		return tk.GenerateJSONPResponseWithMore("success", tk.ToJSONWithDefault(userMapT, ""), req, "Token", generateToken(appCodeT, userT))
+		return tk.GenerateJSONPResponseWithMore("success", tk.ToJSONWithDefault(userMapT, ""), req, "Token", generateToken(appCodeT, userT, userMapT["ROLE"]))
 
 	default:
 		return tk.GenerateJSONPResponse("fail", tk.Spr("unknown request: %v", req), req)
@@ -497,6 +2368,8 @@ func initService() {
 		}
 	}
 
+	tokenExpireG = tk.StrToInt(configG.TokenExpire, 1440)
+
 	tk.Plv(configG)
 
 }
@@ -545,50 +2418,469 @@ func startService() {
 
 }
 
-func runCmd(cmdA string) string {
-	// tk.Pl("run cmd: %v", cmdA)
+// func runCmd(cmdA string) string {
+// 	// tk.Pl("run cmd: %v", cmdA)
 
-	// var errT error
+// 	// var errT error
 
-	switch cmdA {
-	case "version":
-		{
-			tk.Pl("umx " + versionG)
+// 	switch cmdA {
+// 	case "version":
+// 		{
+// 			tk.Pl("umx " + versionG)
+// 		}
+
+// 	case "init":
+// 		{
+// 			initSystem()
+// 		}
+
+// 	case "run":
+// 		{
+// 			startService()
+// 		}
+
+// 	default:
+// 		tk.Pl("unknown command: %v", cmdA)
+// 	}
+
+// 	return "exit"
+// }
+
+type program struct {
+	BasePath string
+}
+
+func (p *program) Start(s service.Service) error {
+	// Start should not block. Do the actual work async.
+	// basePathG = p.BasePath
+	// logWithTime("basePath: %v", basePathG)
+	serviceModeG = true
+
+	go p.run()
+
+	return nil
+}
+
+func (p *program) run() {
+	go doWork()
+}
+
+func (p *program) Stop(s service.Service) error {
+	// Stop should not block. Return with a few seconds.
+	return nil
+}
+
+func plByMode(formatA string, argsA ...interface{}) {
+	if runModeG == "cmd" {
+		tk.Pl(formatA, argsA...)
+	} else {
+		tk.AddDebugF(formatA, argsA...)
+	}
+}
+
+func initSvc() *service.Service {
+	svcConfigT := &service.Config{
+		Name:        serviceNameG,
+		DisplayName: serviceNameG,
+		Description: serviceNameG + " V" + versionG,
+	}
+
+	prgT := &program{BasePath: basePathG}
+	var s, err = service.New(prgT, svcConfigT)
+
+	if err != nil {
+		tk.LogWithTimeCompact("%s unable to start: %s\n", svcConfigT.DisplayName, err)
+		return nil
+	}
+
+	return &s
+}
+
+func mainHandler(w http.ResponseWriter, req *http.Request) {
+	if req != nil {
+		req.ParseForm()
+	}
+
+	// reqT := tk.GetFormValueWithDefaultValue(req, "prms", "")
+
+	plByMode("req: %+v", req)
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte("Test."))
+	// fmt.Fprintf(w, "This is an example server.\n")
+	// io.WriteString(w, "This is an example server.\n")
+}
+
+func Svc() {
+	tk.SetLogFile(filepath.Join(basePathG, serviceNameG+".log"))
+
+	defer func() {
+		if v := recover(); v != nil {
+			tk.LogWithTimeCompact("panic in svc %v", v)
 		}
+	}()
 
+	if runModeG != "cmd" {
+		runModeG = "service"
+	}
+
+	plByMode("runModeG: %v", runModeG)
+
+	tk.DebugModeG = true
+
+	tk.LogWithTimeCompact("%v V%v", serviceNameG, versionG)
+	tk.LogWithTimeCompact("os: %v, basePathG: %v, configFileNameG: %v", runtime.GOOS, basePathG, configFileNameG)
+
+	if tk.GetOSName() == "windows" {
+		plByMode("Windows mode")
+		currentOSG = "win"
+		if tk.Trim(basePathG) == "" {
+			basePathG = "c:\\" + serviceNameG
+		}
+		configFileNameG = serviceNameG + "win.cfg"
+	} else {
+		plByMode("Linux mode")
+		currentOSG = "linux"
+		if tk.Trim(basePathG) == "" {
+			basePathG = "/" + serviceNameG
+		}
+		configFileNameG = serviceNameG + "linux.cfg"
+	}
+
+	if !tk.IfFileExists(basePathG) {
+		os.MkdirAll(basePathG, 0777)
+	}
+
+	tk.SetLogFile(filepath.Join(basePathG, serviceNameG+".log"))
+
+	cfgFileNameT := filepath.Join(basePathG, configFileNameG)
+	if tk.IfFileExists(cfgFileNameT) {
+		plByMode("Process config file: %v", cfgFileNameT)
+		fileContentT := tk.LoadSimpleMapFromFile(cfgFileNameT)
+
+		if fileContentT != nil {
+			portG = fileContentT["port"]
+			sslPortG = fileContentT["sslPort"]
+			basePathG = fileContentT["crmBasePath"]
+		}
+	}
+
+	plByMode("portG: %v, sslPortG: %v, basePathG: %v", portG, sslPortG, basePathG)
+
+	tk.LogWithTimeCompact("portG: %v, sslPortG: %v, basePathG: %v", portG, sslPortG, basePathG)
+
+	tk.LogWithTimeCompact("Service started.")
+	tk.LogWithTimeCompact("Using config file: %v", cfgFileNameT)
+
+	go startService()
+}
+
+var exitG = make(chan struct{})
+
+func doWork() {
+
+	go Svc()
+
+	for {
+		select {
+		case <-exitG:
+			os.Exit(0)
+			return
+		}
+	}
+}
+
+func runCmd(cmdLineA []string) {
+	cmdT := ""
+
+	for _, v := range cmdLineA {
+		if !strings.HasPrefix(v, "-") {
+			cmdT = v
+			break
+		}
+	}
+
+	// if cmdT == "" {
+	// 	fmt.Println("empty command")
+	// 	return
+	// }
+
+	var errT error
+
+	basePathG = tk.GetSwitchWithDefaultValue(cmdLineA, "-base=", basePathG)
+
+	tk.EnsureMakeDirs(basePathG)
+
+	if !tk.IfFileExists(basePathG) {
+		tk.Pl("base path not exists: %v, use current directory instead", basePathG)
+		basePathG, errT = filepath.Abs(".")
+
+		if errT != nil {
+			tk.Pl("failed to analyze base path")
+			return
+		}
+		// return
+	}
+
+	if !tk.IsDirectory(basePathG) {
+		tk.Pl("base path not exists: %v", basePathG)
+		return
+	}
+
+	// tk.Pl("base path: %v", basePathG)
+
+	// testPortG = tk.GetSwitchWithDefaultIntValue(cmdLineA, "-port=", 0)
+	// if testPortG > 0 {
+	// 	tk.Pl("test port: %v", testPortG)
+	// }
+
+	switch cmdT {
+	case "version":
+		tk.Pl(serviceNameG+" V%v", versionG)
+		break
+	case "go": // run in cmd mode
+		runModeG = "cmd"
+		doWork()
+		break
+	case "test":
+		{
+
+		}
+		break
 	case "init":
 		{
 			initSystem()
 		}
+	case "", "run":
+		s := initSvc()
 
-	case "run":
-		{
-			startService()
+		if s == nil {
+			tk.LogWithTimeCompact("Failed to init service")
+			break
 		}
 
+		errT = (*s).Run()
+		if errT != nil {
+			tk.LogWithTimeCompact("Service \"%s\" failed to run: %v.", (*s).String(), errT)
+		}
+		break
+	case "installonly":
+		s := initSvc()
+
+		if s == nil {
+			tk.Pl("Failed to install")
+			break
+		}
+
+		errT = (*s).Install()
+		if errT != nil {
+			tk.Pl("Failed to install: %v", errT)
+			return
+		}
+
+		tk.Pl("Service \"%s\" installed.", (*s).String())
+
+	case "install":
+		s := initSvc()
+
+		if s == nil {
+			tk.Pl("Failed to install")
+			break
+		}
+
+		tk.Pl("Installing service \"%v\"...", (*s).String())
+
+		errT = (*s).Install()
+		if errT != nil {
+			tk.Pl("Failed to install: %v", errT)
+			return
+		}
+
+		tk.Pl("Service \"%s\" installed.", (*s).String())
+
+		tk.Pl("Starting service \"%v\"...", (*s).String())
+
+		errT = (*s).Start()
+		if errT != nil {
+			tk.Pl("Failed to start: %v", errT)
+			return
+		}
+
+		tk.Pl("Service \"%s\" started.", (*s).String())
+	case "uninstall":
+		s := initSvc()
+
+		if s == nil {
+			tk.Pl("Failed to install")
+			break
+		}
+
+		errT = (*s).Stop()
+		if errT != nil {
+			tk.Pl("Failed to stop: %s", errT)
+		} else {
+			tk.Pl("Service \"%s\" stopped.", (*s).String())
+		}
+
+		errT = (*s).Uninstall()
+		if errT != nil {
+			tk.Pl("Failed to remove: %v", errT)
+			return
+		}
+
+		tk.Pl("Service \"%s\" removed.", (*s).String())
+		break
+	case "reinstall":
+		s := initSvc()
+
+		if s == nil {
+			tk.Pl("Failed to install")
+			break
+		}
+
+		errT = (*s).Stop()
+		if errT != nil {
+			tk.Pl("Failed to stop: %s", errT)
+		} else {
+			tk.Pl("Service \"%s\" stopped.", (*s).String())
+		}
+
+		errT = (*s).Uninstall()
+		if errT != nil {
+			tk.Pl("Failed to remove: %v", errT)
+			return
+		}
+
+		tk.Pl("Service \"%s\" removed.", (*s).String())
+
+		errT = (*s).Install()
+		if errT != nil {
+			tk.Pl("Failed to install: %v", errT)
+			return
+		}
+
+		tk.Pl("Service \"%s\" installed.", (*s).String())
+
+		errT = (*s).Start()
+		if errT != nil {
+			tk.Pl("Failed to start: %v", errT)
+			return
+		}
+
+		tk.Pl("Service \"%s\" started.", (*s).String())
+	case "start":
+		s := initSvc()
+
+		if s == nil {
+			tk.Pl("Failed to install")
+			break
+		}
+
+		errT = (*s).Start()
+		if errT != nil {
+			tk.Pl("Failed to start: %v", errT)
+			return
+		}
+
+		tk.Pl("Service \"%s\" started.", (*s).String())
+		break
+	case "stop":
+		s := initSvc()
+
+		if s == nil {
+			tk.Pl("Failed to install")
+			break
+		}
+
+		errT = (*s).Stop()
+		if errT != nil {
+			tk.Pl("Failed to stop: %v", errT)
+			return
+		}
+
+		tk.Pl("Service \"%s\" stopped.", (*s).String())
+		break
 	default:
-		tk.Pl("unknown command: %v", cmdA)
+		tk.Pl("unknown command")
+		break
 	}
 
-	return "exit"
 }
 
 func main() {
-	var rs string
+	// var rs string
 
 	argsT := os.Args
 
+	if strings.HasPrefix(runtime.GOOS, "win") {
+		basePathG = "c:\\" + serviceNameG
+	} else {
+		basePathG = "/" + serviceNameG
+	}
+
 	basePathG = tk.GetSwitch(argsT, "-base=", basePathG)
 
-	cmdT := tk.GetParameter(argsT, 1)
+	// cmdT := tk.GetParameter(argsT, 1)
 
-	if !tk.IsErrStr(cmdT) {
-		rs = runCmd(cmdT)
+	// if !tk.IsErrStr(cmdT) {
+	// 	rs = runCmd(cmdT)
+	// }
+
+	// if rs == "exit" {
+	// 	os.Exit(0)
+	// }
+
+	if len(os.Args) < 2 {
+		tk.Pl("%v V%v is in service(server) mode. Running the application without any arguments will cause it in service mode.\n", serviceNameG, versionG)
+		serviceModeG = true
+
+		s := initSvc()
+
+		if s == nil {
+			tk.LogWithTimeCompact("Failed to init service")
+			return
+		}
+
+		err := (*s).Run()
+		if err != nil {
+			tk.LogWithTimeCompact("Service \"%s\" failed to run.", (*s).String())
+		}
+
+		return
 	}
 
-	if rs == "exit" {
-		os.Exit(0)
+	if tk.GetOSName() == "windows" {
+		plByMode("Windows mode")
+		currentOSG = "win"
+		basePathG = "c:\\" + serviceNameG
+		configFileNameG = serviceNameG + "win.cfg"
+	} else {
+		plByMode("Linux mode")
+		currentOSG = "linux"
+		basePathG = "/" + serviceNameG
+		configFileNameG = serviceNameG + "linux.cfg"
 	}
 
-	// tk.Pl("Initialzing...")
+	if !tk.IfFileExists(basePathG) {
+		os.MkdirAll(basePathG, 0777)
+	}
+
+	tk.SetLogFile(filepath.Join(basePathG, serviceNameG+".log"))
+
+	cfgFileNameT := filepath.Join(basePathG, configFileNameG)
+	if tk.IfFileExists(cfgFileNameT) {
+		plByMode("Process config file: %v", cfgFileNameT)
+		fileContentT := tk.LoadSimpleMapFromFile(cfgFileNameT)
+
+		if fileContentT != nil {
+			portG = fileContentT["port"]
+			sslPortG = fileContentT["sslPort"]
+			basePathG = fileContentT["basePath"]
+		}
+	}
+
+	plByMode("portG: %v, sslPortG: %v, basePathG: %v", portG, sslPortG, basePathG)
+
+	runCmd(os.Args[1:])
+
 }
