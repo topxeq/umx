@@ -42,34 +42,37 @@ var defaultConfigG = `
 
 var initSQLs = []string{
 	`DROP TABLE APP`,
-	`CREATE TABLE APP (ID int(11) NOT NULL AUTO_INCREMENT, CODE VARCHAR(100) DEFAULT NULL, SECRET VARCHAR(100) DEFAULT '', NAME VARCHAR(255) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, RESV1 varchar(255) DEFAULT NULL, PRIMARY KEY (ID), UNIQUE KEY APP_UN (CODE)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
+	`CREATE TABLE APP (ID int(11) NOT NULL AUTO_INCREMENT, CODE VARCHAR(100) DEFAULT NULL, SECRET VARCHAR(100) DEFAULT '', NAME VARCHAR(255) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, RESV1 varchar(255) DEFAULT NULL, TIME_STAMP datetime NOT NULL DEFAULT NOW(), PRIMARY KEY (ID), UNIQUE KEY APP_UN (CODE)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
 	`INSERT INTO APP (CODE, NAME, SECRET) VALUES('', '', '')`,
 	`INSERT INTO APP (CODE, NAME, SECRET) VALUES('COMMON', '', '')`,
 	`INSERT INTO APP (CODE, NAME, SECRET) VALUES('TEST', '', '')`,
 	`INSERT INTO APP (CODE, NAME, SECRET) VALUES('APP1', '', 'SECRET1')`,
 
 	`DROP TABLE ORG`,
-	`CREATE TABLE ORG (ID int(11) NOT NULL AUTO_INCREMENT, UP_ID int(11) DEFAULT NULL, APP_CODE VARCHAR(100) DEFAULT NULL, NAME VARCHAR(1024) NOT NULL, CODE VARCHAR(32) DEFAULT NULL, TYPE VARCHAR(32) DEFAULT NULL, CONTACT VARCHAR(255) DEFAULT NULL, ADDRESS VARCHAR(255) DEFAULT NULL, UP_CODE VARCHAR(32) DEFAULT NULL, UP_NAME VARCHAR(1024) DEFAULT NULL, DESCRIPTION VARCHAR(255) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, RESV1 varchar(255) DEFAULT NULL, REL JSON DEFAULT NULL, PRIMARY KEY (ID)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
-	`INSERT INTO ORG (NAME, APP_CODE) VALUES('中国', 'APP1')`,
-	`INSERT INTO ORG (NAME, APP_CODE, UP_ID) select '北京', 'APP1', ID from ORG where NAME='中国'`,
-	`INSERT INTO ORG (NAME, APP_CODE, UP_ID) select '海淀区', 'APP1', ID from ORG where NAME='北京'`,
+	`CREATE TABLE ORG (ID int(11) NOT NULL AUTO_INCREMENT, UP_ID int(11) DEFAULT NULL, APP_CODE VARCHAR(100) DEFAULT NULL, NAME VARCHAR(1024) NOT NULL, CODE VARCHAR(32) DEFAULT NULL, TYPE VARCHAR(32) DEFAULT NULL, SUB_TYPE VARCHAR(100) DEFAULT NULL, CONTACT VARCHAR(255) DEFAULT NULL, EMAIL VARCHAR(100) DEFAULT NULL, PHONE VARCHAR(50) DEFAULT NULL, MOBILE VARCHAR(32) DEFAULT NULL, ADDRESS VARCHAR(255) DEFAULT NULL, UP_CODE VARCHAR(32) DEFAULT NULL, UP_NAME VARCHAR(1024) DEFAULT NULL, DESCRIPTION VARCHAR(255) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, RESV1 varchar(255) DEFAULT NULL, RESV2 varchar(255) DEFAULT NULL, RESV3 varchar(255) DEFAULT NULL, REL JSON DEFAULT NULL, TIME_STAMP datetime NOT NULL DEFAULT NOW(), PRIMARY KEY (ID)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
+	`INSERT INTO ORG (NAME, APP_CODE) VALUES('北京理工大学', 'APP1')`,
 
 	`DROP TABLE ORG_GROUP`,
-	`CREATE TABLE ORG_GROUP (ID int(11) NOT NULL AUTO_INCREMENT, APP_CODE VARCHAR(100) DEFAULT NULL, NAME VARCHAR(1024) NOT NULL, CODE VARCHAR(32) DEFAULT NULL, DESCRIPTION VARCHAR(255) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, RESV1 varchar(255) DEFAULT NULL, REL JSON DEFAULT NULL, PRIMARY KEY (ID)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
-	`INSERT INTO ORG_GROUP (NAME, APP_CODE, DESCRIPTION, REMARK) VALUES('华北大区', 'APP1', '', '')`,
-	`INSERT INTO ORG_GROUP (NAME, APP_CODE, DESCRIPTION, REMARK) VALUES('东北大区', 'APP1', '', '')`,
+	`CREATE TABLE ORG_GROUP (ID int(11) NOT NULL AUTO_INCREMENT, UP_ID int(11) DEFAULT NULL, APP_CODE VARCHAR(100) DEFAULT NULL, NAME VARCHAR(1024) NOT NULL, CODE VARCHAR(32) DEFAULT NULL, UP_CODE VARCHAR(32) DEFAULT NULL, TYPE VARCHAR(32) DEFAULT NULL, LEVEL VARCHAR(32) DEFAULT NULL, LEVEL_INDEX int(5) DEFAULT NULL, DESCRIPTION VARCHAR(255) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, RESV1 varchar(255) DEFAULT NULL, REL JSON DEFAULT NULL, TIME_STAMP datetime NOT NULL DEFAULT NOW(), PRIMARY KEY (ID)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
+	`INSERT INTO ORG_GROUP (NAME, APP_CODE, TYPE, LEVEL_INDEX) VALUES('中国', 'APP1', 'area', 3)`,
+	`INSERT INTO ORG_GROUP (NAME, APP_CODE, TYPE, LEVEL_INDEX, UP_ID) select '北京', 'APP1', 'area', 2, ID from ORG_GROUP where NAME='中国' AND APP_CODE='APP1'`,
+	`INSERT INTO ORG_GROUP (NAME, APP_CODE, TYPE, LEVEL_INDEX, UP_ID) select '海淀区', 'APP1', 'area', 1, ID from ORG_GROUP where NAME='北京' AND APP_CODE='APP1'`,
 
 	`DROP TABLE ORG_GROUP_LINK`,
-	`CREATE TABLE ORG_GROUP_LINK (ID int(11) NOT NULL AUTO_INCREMENT, APP_CODE VARCHAR(100) DEFAULT NULL, ORG_GROUP_ID int(11) NOT NULL, GROUP_NAME VARCHAR(1024) DEFAULT NULL, ORG_ID int(11) NOT NULL, ORG_NAME VARCHAR(1024) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, RESV1 varchar(255) DEFAULT NULL, PRIMARY KEY (ID)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
-	`INSERT INTO ORG_GROUP_LINK (APP_CODE, ORG_GROUP_ID, GROUP_NAME, ORG_ID, ORG_NAME, REMARK) select 'APP1', a.ID, '华北大区', b.ID, "北京", '' from (SELECT ID from ORG_GROUP where NAME='华北大区') a, (SELECT ID from ORG where NAME='北京') b`,
+	`CREATE TABLE ORG_GROUP_LINK (ID int(11) NOT NULL AUTO_INCREMENT, APP_CODE VARCHAR(100) DEFAULT NULL, ORG_GROUP_ID int(11) NOT NULL, GROUP_NAME VARCHAR(1024) DEFAULT NULL, ORG_ID int(11) NOT NULL, ORG_NAME VARCHAR(1024) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, RESV1 varchar(255) DEFAULT NULL, TIME_STAMP datetime NOT NULL DEFAULT NOW(), PRIMARY KEY (ID)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
+	`INSERT INTO ORG_GROUP_LINK (APP_CODE, ORG_GROUP_ID, GROUP_NAME, ORG_ID, ORG_NAME, REMARK) select 'APP1', a.ID, '海淀区', b.ID, "北京理工大学", '' from (SELECT ID from ORG_GROUP where NAME='海淀区' AND APP_CODE='APP1') a, (SELECT ID from ORG where NAME='北京理工大学' AND APP_CODE='APP1') b`,
+
+	`DROP TABLE ORG_GROUP_GROUP_LINK`,
+	`CREATE TABLE ORG_GROUP_GROUP_LINK (ID int(11) NOT NULL AUTO_INCREMENT, APP_CODE VARCHAR(100) DEFAULT NULL, GROUP_ID int(11) NOT NULL, GROUP_NAME VARCHAR(1024) DEFAULT NULL, UP_GROUP_ID int(11) NOT NULL, UP_GROUP_NAME VARCHAR(1024) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, RESV1 varchar(255) DEFAULT NULL, TIME_STAMP datetime NOT NULL DEFAULT NOW(), PRIMARY KEY (ID)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
+	`INSERT INTO ORG_GROUP_GROUP_LINK (APP_CODE, GROUP_ID, GROUP_NAME, UP_GROUP_ID, UP_GROUP_NAME, REMARK) select 'APP1', a.ID, '海淀区', b.ID, "北京", '' from (SELECT ID from ORG_GROUP where NAME='海淀区' AND APP_CODE='APP1') a, (SELECT ID from ORG_GROUP where NAME='北京' AND APP_CODE='APP1') b`,
 
 	`DROP TABLE USER`,
-	`CREATE TABLE USER (ID int(11) NOT NULL AUTO_INCREMENT, APP_CODE VARCHAR(100) DEFAULT NULL, ID_TYPE VARCHAR(32), USER_ID VARCHAR(100) NOT NULL, PASSWORD VARCHAR(100) NOT NULL, NAME VARCHAR(100) DEFAULT NULL, EMAIL VARCHAR(100) DEFAULT NULL, MOBILE VARCHAR(32) DEFAULT NULL, ROLE VARCHAR(100) DEFAULT NULL, USER_STATUS VARCHAR(32) DEFAULT NULL, DESCRIPTION VARCHAR(255) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, RESV1 varchar(255) DEFAULT NULL, RESV2 varchar(255) DEFAULT NULL, RESV3 varchar(255) DEFAULT NULL, PRIMARY KEY (ID), UNIQUE KEY USER_UN (APP_CODE,USER_ID)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
+	`CREATE TABLE USER (ID int(11) NOT NULL AUTO_INCREMENT, APP_CODE VARCHAR(100) DEFAULT NULL, ID_TYPE VARCHAR(32), USER_ID VARCHAR(100) NOT NULL, PASSWORD VARCHAR(100) NOT NULL, NAME VARCHAR(100) DEFAULT NULL, EMAIL VARCHAR(100) DEFAULT NULL, PHONE VARCHAR(50) DEFAULT NULL, FAX VARCHAR(50) DEFAULT NULL, MOBILE VARCHAR(32) DEFAULT NULL, ROLE VARCHAR(100) DEFAULT NULL, USER_STATUS VARCHAR(32) DEFAULT NULL, ORG_ID int(11) DEFAULT NULL, ORG_CODE VARCHAR(32) DEFAULT NULL, AREA_ID int(11) DEFAULT NULL, AREA_CODE VARCHAR(32) DEFAULT NULL, POSITION VARCHAR(100) DEFAULT NULL, TITLE VARCHAR(100) DEFAULT NULL, ADDRESS VARCHAR(1024) DEFAULT NULL, USER_TYPE VARCHAR(100) DEFAULT NULL, DESCRIPTION VARCHAR(255) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, RESV1 varchar(255) DEFAULT NULL, RESV2 varchar(255) DEFAULT NULL, RESV3 varchar(255) DEFAULT NULL, LOGIN_TIME datetime DEFAULT NULL, TIME1 datetime DEFAULT NULL, TIME2 datetime DEFAULT NULL, TIME_STAMP datetime NOT NULL DEFAULT NOW(), PRIMARY KEY (ID), UNIQUE KEY USER_UN (APP_CODE,USER_ID)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
 	`INSERT INTO USER (USER_ID, PASSWORD, APP_CODE, ROLE) VALUES('admin', 'admin9768', 'APP1', 'admin')`,
 
 	`DROP TABLE USER_ORG_RIGHT_LINK`,
-	`CREATE TABLE USER_ORG_RIGHT_LINK (ID int(11) NOT NULL AUTO_INCREMENT, APP_CODE VARCHAR(100) DEFAULT NULL, REAL_USER_ID int(11) DEFAULT NULL, USER_ID VARCHAR(100) DEFAULT NULL, ORG_ID int(11) DEFAULT NULL, ORG_GROUP_ID int(11) DEFAULT NULL, LINK_TYPE VARCHAR(32) DEFAULT NULL, RIGHT_NAME VARCHAR(100) DEFAULT NULL, ROLE VARCHAR(100) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, RESV1 varchar(255) DEFAULT NULL, PRIMARY KEY (ID), UNIQUE KEY USER_UN (APP_CODE,REAL_USER_ID,USER_ID,ORG_ID,ORG_GROUP_ID,RIGHT_NAME)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
-	`INSERT INTO USER_ORG_RIGHT_LINK (APP_CODE, USER_ID, RIGHT_NAME) VALUES('APP1', 'admin', 'all')`,
+	`CREATE TABLE USER_ORG_RIGHT_LINK (ID int(11) NOT NULL AUTO_INCREMENT, APP_CODE VARCHAR(100) DEFAULT NULL, REAL_USER_ID int(11) DEFAULT NULL, USER_ID VARCHAR(100) DEFAULT NULL, ORG_ID int(11) DEFAULT NULL, ORG_GROUP_ID int(11) DEFAULT NULL, LINK_TYPE VARCHAR(32) DEFAULT NULL, RIGHT_NAME VARCHAR(100) DEFAULT NULL, ROLE VARCHAR(100) DEFAULT NULL, REMARK varchar(255) DEFAULT NULL, RESV1 varchar(255) DEFAULT NULL, TIME_STAMP datetime NOT NULL DEFAULT NOW(), PRIMARY KEY (ID), UNIQUE KEY USER_UN (APP_CODE,REAL_USER_ID,USER_ID,ORG_ID,ORG_GROUP_ID,RIGHT_NAME)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8`,
+	`INSERT INTO USER_ORG_RIGHT_LINK (APP_CODE, USER_ID, ORG_GROUP_ID, LINK_TYPE, RIGHT_NAME) select 'APP1', 'admin', ID, 'ORG_GROUP', 'all' from ORG_GROUP where NAME='中国' AND APP_CODE='APP1'`,
 }
 
 type ConfigType struct {
@@ -544,7 +547,7 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 
 		defer dbT.Close()
 
-		userT := paraMapT["user"]
+		userT := tk.Trim(paraMapT["user"])
 		if userT == "" {
 			return tk.GenerateJSONPResponse("fail", tk.Spr("empty user id"), req)
 		}
@@ -565,9 +568,31 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 		resv2T := paraMapT["resv2"]
 		resv3T := paraMapT["resv3"]
 
-		c1, c2, errT := sqltk.ExecV(dbT, `INSERT INTO USER (APP_CODE, USER_ID, PASSWORD, NAME, EMAIL, MOBILE, ROLE, USER_STATUS, DESCRIPTION, REMARK, RESV1, RESV2, RESV3) VALUES('`+sqltk.FormatSQLValue(appCodeT)+`', '`+sqltk.FormatSQLValue(userT)+`', '`+sqltk.FormatSQLValue(passT)+`', '`+sqltk.FormatSQLValue(userNameT)+`', '`+sqltk.FormatSQLValue(emailT)+`', '`+sqltk.FormatSQLValue(mobileT)+`', '`+sqltk.FormatSQLValue(roleT)+`', '`+sqltk.FormatSQLValue(statusT)+`', '`+sqltk.FormatSQLValue(descriptionT)+`', '`+sqltk.FormatSQLValue(remarkT)+`', '`+sqltk.FormatSQLValue(resv1T)+`', '`+sqltk.FormatSQLValue(resv2T)+`', '`+sqltk.FormatSQLValue(resv3T)+`') `)
+		phoneT := paraMapT["phone"]
+		faxT := paraMapT["fax"]
+
+		orgIDT := tk.Trim(paraMapT["orgID"])
+		if orgIDT == "" {
+			orgIDT = "NULL"
+		}
+
+		orgCodeT := tk.Trim(paraMapT["orgCode"])
+
+		areaIDT := tk.Trim(paraMapT["areaID"])
+		if areaIDT == "" {
+			areaIDT = "NULL"
+		}
+
+		areaCodeT := tk.Trim(paraMapT["areaCode"])
+
+		positionT := paraMapT["position"]
+		addressT := paraMapT["address"]
+		userTypeT := paraMapT["userType"]
+
+		c1, c2, errT := sqltk.ExecV(dbT, `INSERT INTO USER (APP_CODE, USER_ID, PASSWORD, NAME, EMAIL, MOBILE, ROLE, USER_STATUS, DESCRIPTION, REMARK, RESV1, RESV2, RESV3, PHONE, FAX, ORG_ID, ORG_CODE, AREA_ID, AREA_CODE, POSITION, ADDRESS, USER_TYPE) VALUES('`+sqltk.FormatSQLValue(appCodeT)+`', '`+sqltk.FormatSQLValue(userT)+`', '`+sqltk.FormatSQLValue(passT)+`', '`+sqltk.FormatSQLValue(userNameT)+`', '`+sqltk.FormatSQLValue(emailT)+`', '`+sqltk.FormatSQLValue(mobileT)+`', '`+sqltk.FormatSQLValue(roleT)+`', '`+sqltk.FormatSQLValue(statusT)+`', '`+sqltk.FormatSQLValue(descriptionT)+`', '`+sqltk.FormatSQLValue(remarkT)+`', '`+sqltk.FormatSQLValue(resv1T)+`', '`+sqltk.FormatSQLValue(resv2T)+`', '`+sqltk.FormatSQLValue(resv3T)+`', '`+sqltk.FormatSQLValue(phoneT)+`', '`+sqltk.FormatSQLValue(faxT)+`', `+sqltk.FormatSQLValue(orgIDT)+`, '`+sqltk.FormatSQLValue(orgCodeT)+`', `+sqltk.FormatSQLValue(areaIDT)+`, '`+sqltk.FormatSQLValue(areaCodeT)+`', '`+sqltk.FormatSQLValue(positionT)+`', '`+sqltk.FormatSQLValue(addressT)+`', '`+sqltk.FormatSQLValue(userTypeT)+`') `)
 
 		if errT != nil {
+			tk.Plvx(`INSERT INTO USER (APP_CODE, USER_ID, PASSWORD, NAME, EMAIL, MOBILE, ROLE, USER_STATUS, DESCRIPTION, REMARK, RESV1, RESV2, RESV3, PHONE, FAX, ORG_ID, ORG_CODE, POSITION, ADDRESS, USER_TYPE) VALUES('` + sqltk.FormatSQLValue(appCodeT) + `', '` + sqltk.FormatSQLValue(userT) + `', '` + sqltk.FormatSQLValue(passT) + `', '` + sqltk.FormatSQLValue(userNameT) + `', '` + sqltk.FormatSQLValue(emailT) + `', '` + sqltk.FormatSQLValue(mobileT) + `', '` + sqltk.FormatSQLValue(roleT) + `', '` + sqltk.FormatSQLValue(statusT) + `', '` + sqltk.FormatSQLValue(descriptionT) + `', '` + sqltk.FormatSQLValue(remarkT) + `', '` + sqltk.FormatSQLValue(resv1T) + `', '` + sqltk.FormatSQLValue(resv2T) + `', '` + sqltk.FormatSQLValue(resv3T) + `', '` + sqltk.FormatSQLValue(phoneT) + `', '` + sqltk.FormatSQLValue(faxT) + `', ` + sqltk.FormatSQLValue(orgIDT) + `, '` + sqltk.FormatSQLValue(orgCodeT) + `', '` + sqltk.FormatSQLValue(positionT) + `', '` + sqltk.FormatSQLValue(addressT) + `', '` + sqltk.FormatSQLValue(userTypeT) + `') `)
 			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
 		}
 
@@ -759,6 +784,87 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 			bufT.WriteString(`RESV3='` + sqltk.FormatSQLValue(resv3T) + `'`)
 		}
 
+		phoneT, ok := paraMapT["phone"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`PHONE='` + sqltk.FormatSQLValue(phoneT) + `'`)
+		}
+
+		faxT, ok := paraMapT["fax"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`FAX='` + sqltk.FormatSQLValue(faxT) + `'`)
+		}
+
+		orgIDT, ok := paraMapT["orgID"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`ORG_ID=` + sqltk.FormatSQLValue(orgIDT) + ``)
+		}
+
+		orgCodeT, ok := paraMapT["orgCode"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`ORG_CODE='` + sqltk.FormatSQLValue(orgCodeT) + `'`)
+		}
+
+		areaIDT, ok := paraMapT["areaID"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`AREA_ID=` + sqltk.FormatSQLValue(areaIDT) + ``)
+		}
+
+		areaCodeT, ok := paraMapT["areaCode"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`AREA_CODE='` + sqltk.FormatSQLValue(areaCodeT) + `'`)
+		}
+
+		positionT, ok := paraMapT["position"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`POSITION='` + sqltk.FormatSQLValue(positionT) + `'`)
+		}
+
+		addressT, ok := paraMapT["address"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`ADDRESS='` + sqltk.FormatSQLValue(addressT) + `'`)
+		}
+
+		userTypeT, ok := paraMapT["userType"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`USER_TYPE='` + sqltk.FormatSQLValue(userTypeT) + `'`)
+		}
+
 		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
 		if errT != nil {
 			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
@@ -788,7 +894,7 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 			}
 		}
 
-		_, c2, errT := sqltk.ExecV(dbT, `UPDATE USER SET `+bufT.String()+` WHERE ID=`+sqltk.FormatSQLValue(userIDT)+`;`)
+		_, c2, errT := sqltk.ExecV(dbT, `UPDATE USER SET `+bufT.String()+`, TIME_STAMP=NOW() WHERE ID=`+sqltk.FormatSQLValue(userIDT)+`;`)
 
 		if errT != nil {
 			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
@@ -893,7 +999,7 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 
 		passwordT := tk.GenerateRandomString(6, 12, true, true, true, false, false, false)
 
-		_, c2, errT := sqltk.ExecV(dbT, `UPDATE USER SET PASSWORD='`+tk.MD5Encrypt(passwordT)+`' WHERE ID=`+sqltk.FormatSQLValue(userIDT)+`;`)
+		_, c2, errT := sqltk.ExecV(dbT, `UPDATE USER SET PASSWORD='`+tk.MD5Encrypt(passwordT)+`', TIME_STAMP=NOW() WHERE ID=`+sqltk.FormatSQLValue(userIDT)+`;`)
 
 		if errT != nil {
 			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
@@ -943,7 +1049,7 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 
 		defer dbT.Close()
 
-		_, c2, errT := sqltk.ExecV(dbT, `UPDATE USER SET PASSWORD='`+passT+`' WHERE ID=`+sqltk.FormatSQLValue(userIDT)+`;`)
+		_, c2, errT := sqltk.ExecV(dbT, `UPDATE USER SET PASSWORD='`+passT+`', TIME_STAMP=NOW() WHERE ID=`+sqltk.FormatSQLValue(userIDT)+`;`)
 
 		if errT != nil {
 			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
@@ -988,7 +1094,7 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 
 		defer dbT.Close()
 
-		_, c2, errT := sqltk.ExecV(dbT, `UPDATE USER SET USER_STATUS='disabled' WHERE ID=`+sqltk.FormatSQLValue(userIDT)+`;`)
+		_, c2, errT := sqltk.ExecV(dbT, `UPDATE USER SET USER_STATUS='disabled', TIME_STAMP=NOW() WHERE ID=`+sqltk.FormatSQLValue(userIDT)+`;`)
 
 		if errT != nil {
 			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
@@ -1033,7 +1139,7 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 
 		defer dbT.Close()
 
-		_, c2, errT := sqltk.ExecV(dbT, `UPDATE USER SET USER_STATUS='' WHERE ID=`+sqltk.FormatSQLValue(userIDT)+`;`)
+		_, c2, errT := sqltk.ExecV(dbT, `UPDATE USER SET USER_STATUS='', TIME_STAMP=NOW() WHERE ID=`+sqltk.FormatSQLValue(userIDT)+`;`)
 
 		if errT != nil {
 			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
@@ -1130,6 +1236,10 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 		typeT := paraMapT["type"]
 		contactT := paraMapT["contact"]
 		addressT := paraMapT["address"]
+		subTypeT := paraMapT["subType"]
+		emailT := paraMapT["email"]
+		phoneT := paraMapT["phone"]
+		mobileT := paraMapT["mobile"]
 		upCodeT := paraMapT["upCode"]
 		upNameT := paraMapT["upName"]
 
@@ -1145,7 +1255,7 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 			}
 		}
 
-		c1, c2, errT := sqltk.ExecV(dbT, `INSERT INTO ORG (APP_CODE, NAME, CODE, DESCRIPTION, REMARK, UP_ID, TYPE, CONTACT, ADDRESS, UP_CODE, UP_NAME) VALUES('`+sqltk.FormatSQLValue(appCodeT)+`', '`+sqltk.FormatSQLValue(orgNameT)+`', '`+sqltk.FormatSQLValue(orgCodeT)+`', '`+sqltk.FormatSQLValue(descriptionT)+`', '`+sqltk.FormatSQLValue(remarkT)+`', `+upIDT+`, '`+sqltk.FormatSQLValue(typeT)+`', '`+sqltk.FormatSQLValue(contactT)+`', '`+sqltk.FormatSQLValue(addressT)+`', '`+sqltk.FormatSQLValue(upCodeT)+`', '`+sqltk.FormatSQLValue(upNameT)+`') `)
+		c1, c2, errT := sqltk.ExecV(dbT, `INSERT INTO ORG (APP_CODE, NAME, CODE, DESCRIPTION, REMARK, UP_ID, TYPE, SUB_TYPE, CONTACT, EMAIL, ADDRESS, PHONE, MOBILE, UP_CODE, UP_NAME) VALUES('`+sqltk.FormatSQLValue(appCodeT)+`', '`+sqltk.FormatSQLValue(orgNameT)+`', '`+sqltk.FormatSQLValue(orgCodeT)+`', '`+sqltk.FormatSQLValue(descriptionT)+`', '`+sqltk.FormatSQLValue(remarkT)+`', `+upIDT+`, '`+sqltk.FormatSQLValue(typeT)+`, '`+sqltk.FormatSQLValue(subTypeT)+`', '`+sqltk.FormatSQLValue(contactT)+`', '`+sqltk.FormatSQLValue(emailT)+`', '`+sqltk.FormatSQLValue(addressT)+`', '`+sqltk.FormatSQLValue(phoneT)+`', '`+sqltk.FormatSQLValue(mobileT)+`', '`+sqltk.FormatSQLValue(upCodeT)+`', '`+sqltk.FormatSQLValue(upNameT)+`') `)
 
 		if errT != nil {
 			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
@@ -1157,7 +1267,7 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 
 		return tk.GenerateJSONPResponseWithMore("success", tk.Int64ToStr(c1), req)
 
-	case "addOrgGroup":
+	case "addOrgWithUpCode":
 		authT := paraMapT["auth"]
 
 		appCodeT := paraMapT["appCode"]
@@ -1175,12 +1285,105 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 
 		defer dbT.Close()
 
-		groupNameT := paraMapT["groupName"]
+		orgNameT := paraMapT["orgName"]
+		if orgNameT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty org name"), req)
+		}
+
+		orgCodeT := paraMapT["orgCode"]
+		remarkT := paraMapT["remark"]
+		descriptionT := paraMapT["description"]
+		upIDT := paraMapT["upID"]
+		if upIDT == "" {
+			upIDT = "NULL"
+		}
+
+		typeT := paraMapT["type"]
+		contactT := paraMapT["contact"]
+		addressT := paraMapT["address"]
+		subTypeT := paraMapT["subType"]
+		emailT := paraMapT["email"]
+		phoneT := paraMapT["phone"]
+		mobileT := paraMapT["mobile"]
+		upCodeT := tk.Trim(paraMapT["upCode"])
+		if upCodeT == "" {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("empty upCode"), req)
+		}
+		upNameT := paraMapT["upName"]
+
+		allowDuplicateNameT := paraMapT["allowDupName"]
+		if allowDuplicateNameT != "true" {
+			sqlRsT, errT := sqltk.QueryDBCount(dbT, `SELECT COUNT(*) FROM ORG WHERE NAME='`+sqltk.FormatSQLValue(orgNameT)+`' AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+			if errT != nil {
+				return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+			}
+
+			if sqlRsT > 0 {
+				return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "record already exists"), req)
+			}
+		}
+
+		sqlRsT, errT := sqltk.QueryDBNSS(dbT, `SELECT ID, NAME FROM ORG_GROUP WHERE APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' AND CODE='`+sqltk.FormatSQLValue(upCodeT)+`'`)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if len(sqlRsT) < 2 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "up code record not exists"), req)
+		}
+
+		upIDT = sqlRsT[1][0]
+		upNameT = sqlRsT[1][1]
+
+		c1, c2, errT := sqltk.ExecV(dbT, `INSERT INTO ORG (APP_CODE, NAME, CODE, DESCRIPTION, REMARK, UP_ID, TYPE, SUB_TYPE, CONTACT, EMAIL, ADDRESS, PHONE, MOBILE, UP_CODE, UP_NAME) VALUES('`+sqltk.FormatSQLValue(appCodeT)+`', '`+sqltk.FormatSQLValue(orgNameT)+`', '`+sqltk.FormatSQLValue(orgCodeT)+`', '`+sqltk.FormatSQLValue(descriptionT)+`', '`+sqltk.FormatSQLValue(remarkT)+`', `+upIDT+`, '`+sqltk.FormatSQLValue(typeT)+`, '`+sqltk.FormatSQLValue(subTypeT)+`', '`+sqltk.FormatSQLValue(contactT)+`', '`+sqltk.FormatSQLValue(emailT)+`', '`+sqltk.FormatSQLValue(addressT)+`', '`+sqltk.FormatSQLValue(phoneT)+`', '`+sqltk.FormatSQLValue(mobileT)+`', '`+sqltk.FormatSQLValue(upCodeT)+`', '`+sqltk.FormatSQLValue(upNameT)+`') `)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if c2 < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no records affected"), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", tk.Int64ToStr(c1), req)
+
+	case "addOrgGroup":
+		authT := paraMapT["auth"]
+
+		appCodeT := tk.Trim(paraMapT["appCode"])
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		groupNameT := tk.Trim(paraMapT["groupName"])
 		if groupNameT == "" {
 			return tk.GenerateJSONPResponse("fail", tk.Spr("empty org group name"), req)
 		}
 
-		groupCodeT := paraMapT["groupCode"]
+		groupCodeT := tk.Trim(paraMapT["groupCode"])
+
+		typeT := tk.Trim(paraMapT["type"])
+		levelT := tk.Trim(paraMapT["level"])
+		levelIndexT := tk.Trim(paraMapT["levelIndex"])
+		if levelIndexT == "" {
+			levelIndexT = "NULL"
+		}
+		upIDT := tk.Trim(paraMapT["upID"])
+		if upIDT == "" {
+			upIDT = "NULL"
+		}
+		upCodeT := tk.Trim(paraMapT["upCode"])
+
 		remarkT := paraMapT["remark"]
 		descriptionT := paraMapT["description"]
 		relT := paraMapT["rel"]
@@ -1191,6 +1394,7 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 		}
 
 		linksT := tk.Trim(paraMapT["links"])
+		linksTypeT := strings.ToLower(tk.Trim(paraMapT["linksType"]))
 
 		allowDuplicateNameT := paraMapT["allowDupName"]
 		if allowDuplicateNameT != "true" {
@@ -1204,7 +1408,7 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 			}
 		}
 
-		c1, c2, errT := sqltk.ExecV(dbT, `INSERT INTO ORG_GROUP (APP_CODE, NAME, CODE, DESCRIPTION, REMARK, REL) VALUES('`+sqltk.FormatSQLValue(appCodeT)+`', '`+sqltk.FormatSQLValue(groupNameT)+`', '`+sqltk.FormatSQLValue(groupCodeT)+`', '`+sqltk.FormatSQLValue(descriptionT)+`', '`+sqltk.FormatSQLValue(remarkT)+`', `+relT+`) `)
+		c1, c2, errT := sqltk.ExecV(dbT, `INSERT INTO ORG_GROUP (APP_CODE, NAME, CODE, TYPE, UP_ID, UP_CODE, LEVEL, LEVEL_INDEX, DESCRIPTION, REMARK, REL) VALUES('`+sqltk.FormatSQLValue(appCodeT)+`', '`+sqltk.FormatSQLValue(groupNameT)+`', '`+sqltk.FormatSQLValue(groupCodeT)+`', '`+sqltk.FormatSQLValue(typeT)+`', `+upIDT+`, '`+sqltk.FormatSQLValue(upCodeT)+`', '`+sqltk.FormatSQLValue(levelT)+`', `+levelIndexT+`, '`+sqltk.FormatSQLValue(descriptionT)+`', '`+sqltk.FormatSQLValue(remarkT)+`', `+relT+`) `)
 
 		if errT != nil {
 			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
@@ -1227,7 +1431,14 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 					return tk.GenerateJSONPResponse("fail", tk.Spr("invalid links item: %v", v), req)
 				}
 
-				_, c2i, errT := sqltk.ExecV(dbT, `INSERT INTO ORG_GROUP_LINK (APP_CODE, ORG_GROUP_ID, ORG_ID) VALUES('`+sqltk.FormatSQLValue(appCodeT)+`', `+tk.Int64ToStr(c1)+`, `+tk.IntToStr(vi)+`)`)
+				var sqlT string
+
+				if linksTypeT == "group-group" {
+					sqlT = `INSERT INTO ORG_GROUP_GROUP_LINK (APP_CODE, UP_GROUP_ID, GROUP_ID) VALUES('` + sqltk.FormatSQLValue(appCodeT) + `', ` + tk.Int64ToStr(c1) + `, ` + tk.IntToStr(vi) + `)`
+				} else {
+					sqlT = `INSERT INTO ORG_GROUP_LINK (APP_CODE, ORG_GROUP_ID, ORG_ID) VALUES('` + sqltk.FormatSQLValue(appCodeT) + `', ` + tk.Int64ToStr(c1) + `, ` + tk.IntToStr(vi) + `)`
+				}
+				_, c2i, errT := sqltk.ExecV(dbT, sqlT)
 
 				if errT != nil {
 					return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
@@ -1290,16 +1501,10 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 				continue
 			}
 
-			_, c2, errT = sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_LINK WHERE ORG_ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+			_, _, errT = sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_LINK WHERE ORG_ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
 
 			if errT != nil {
 				tk.Pl("failed to remove org: %v(%v)", errT, `DELETE FROM ORG_GROUP_LINK WHERE ORG_ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
-				failListT = append(failListT, v)
-				continue
-			}
-
-			if c2 < 1 {
-				tk.Pl("failed to remove org: %v(%v)", "no rows infected", `DELETE FROM ORG_GROUP_LINK WHERE ORG_ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
 				failListT = append(failListT, v)
 				continue
 			}
@@ -1368,11 +1573,27 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 				continue
 			}
 
-			if c2 < 1 {
-				tk.Pl("failed to remove org: %v(%v)", "no rows infected", `DELETE FROM ORG_GROUP_LINK WHERE ORG_GROUP_ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+			_, c2, errT = sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_GROUP_LINK WHERE GROUP_ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+
+			if errT != nil {
+				tk.Pl("failed to remove org: %v(%v)", errT, `DELETE FROM ORG_GROUP_GROUP_LINK WHERE GROUP_ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
 				failListT = append(failListT, v)
 				continue
 			}
+
+			_, c2, errT = sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_GROUP_LINK WHERE UP_GROUP_ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+
+			if errT != nil {
+				tk.Pl("failed to remove org: %v(%v)", errT, `DELETE FROM ORG_GROUP_GROUP_LINK WHERE UP_GROUP_ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+				failListT = append(failListT, v)
+				continue
+			}
+
+			// if c2 < 1 {
+			// 	tk.Pl("failed to remove org: %v(%v)", "no rows infected", `DELETE FROM ORG_GROUP_LINK WHERE ORG_GROUP_ID=`+tk.Trim(v)+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+			// 	failListT = append(failListT, v)
+			// 	continue
+			// }
 		}
 
 		if len(failListT) > 0 {
@@ -1420,9 +1641,21 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to remove org group: %v(%v)", groupIDT, errT), req)
 		}
 
-		if c2 < 1 {
-			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to remove org group: %v(%v)", groupIDT, "no records affected"), req)
+		_, c2, errT = sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_GROUP_LINK WHERE GROUP_ID=`+groupIDT+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to remove org group link: %v(%v)", groupIDT, errT), req)
 		}
+
+		_, c2, errT = sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_GROUP_LINK WHERE UP_GROUP_ID=`+groupIDT+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to remove org group link: %v(%v)", groupIDT, errT), req)
+		}
+
+		// if c2 < 1 {
+		// 	return tk.GenerateJSONPResponse("fail", tk.Spr("failed to remove org group: %v(%v)", groupIDT, "no records affected"), req)
+		// }
 
 		return tk.GenerateJSONPResponseWithMore("success", "1", req)
 
@@ -1459,14 +1692,10 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to remove org: %v(%v)", orgIDT, "no row affected"), req)
 		}
 
-		_, c2, errT = sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_LINK WHERE ORG_ID=`+orgIDT+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+		_, _, errT = sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_LINK WHERE ORG_ID=`+orgIDT+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
 
 		if errT != nil {
 			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to remove org link: %v(%v)", orgIDT, errT), req)
-		}
-
-		if c2 < 1 {
-			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to remove org link: %v(%v)", orgIDT, "no records affected"), req)
 		}
 
 		return tk.GenerateJSONPResponseWithMore("success", "1", req)
@@ -1494,7 +1723,8 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 		var sqlT string
 
 		if typeT != "" {
-			sqlT = `DELETE FROM ORG WHERE APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `' WHERE TYPE='` + sqltk.FormatSQLValue(typeT) + `'`
+			tk.Plvx(typeT)
+			sqlT = `DELETE FROM ORG WHERE APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `' AND TYPE='` + sqltk.FormatSQLValue(typeT) + `'`
 		} else {
 			sqlT = `DELETE FROM ORG WHERE APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `'`
 		}
@@ -1509,11 +1739,66 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 		// 	return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no rows affects"), req)
 		// }
 
-		_, _, errT = sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_LINK WHERE APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
+		_, _, errT = sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_LINK WHERE APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' AND ORG_ID not exists(select ID from ORG) `)
 
 		if errT != nil {
 			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
 		}
+
+		// if c2 < 1 {
+		// 	return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no rows affects"), req)
+		// }
+
+		return tk.GenerateJSONPResponseWithMore("success", "", req)
+
+	case "clearOrgGroups":
+		authT := paraMapT["auth"]
+
+		appCodeT := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		levelIndexT := tk.Trim(paraMapT["levelIndex"])
+
+		var sqlT string
+		var sql2T string
+
+		if levelIndexT != "" {
+			sqlT = `DELETE FROM ORG_GROUP WHERE APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `' AND LEVEL_INDEX=` + sqltk.FormatSQLValue(levelIndexT) + ``
+			sql2T = `SELECT ID FROM ORG_GROUP WHERE APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `' AND LEVEL_INDEX=` + sqltk.FormatSQLValue(levelIndexT) + ``
+		} else {
+			sqlT = `DELETE FROM ORG_GROUP WHERE APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `'`
+			sql2T = `SELECT ID FROM ORG_GROUP WHERE APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `'`
+		}
+
+		sql3T := `DELETE FROM ORG_GROUP_GROUP_LINK WHERE APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `' AND (GROUP_ID IN (` + sql2T + `) OR UP_GROUP_ID IN (` + sql2T + `))`
+
+		_, _, errT = sqltk.ExecV(dbT, sql3T)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		_, _, errT = sqltk.ExecV(dbT, sqlT)
+
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		// if c2 < 1 {
+		// 	return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no rows affects"), req)
+		// }
 
 		// if c2 < 1 {
 		// 	return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no rows affects"), req)
@@ -1593,6 +1878,15 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 			bufT.WriteString(`TYPE='` + sqltk.FormatSQLValue(typeT) + `'`)
 		}
 
+		subTypeT, ok := paraMapT["subType"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`SUB_TYPE='` + sqltk.FormatSQLValue(subTypeT) + `'`)
+		}
+
 		contactT, ok := paraMapT["contact"]
 		if ok {
 			if bufT.Len() > 0 {
@@ -1600,6 +1894,33 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 			}
 
 			bufT.WriteString(`CONTACT='` + sqltk.FormatSQLValue(contactT) + `'`)
+		}
+
+		emailT, ok := paraMapT["email"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`EMAIL='` + sqltk.FormatSQLValue(emailT) + `'`)
+		}
+
+		phoneT, ok := paraMapT["phone"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`PHONE='` + sqltk.FormatSQLValue(phoneT) + `'`)
+		}
+
+		mobileT, ok := paraMapT["mobile"]
+		if ok {
+			if bufT.Len() > 0 {
+				bufT.WriteString(", ")
+			}
+
+			bufT.WriteString(`MOBILE='` + sqltk.FormatSQLValue(mobileT) + `'`)
 		}
 
 		addressT, ok := paraMapT["address"]
@@ -1674,7 +1995,7 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 			}
 		}
 
-		_, c2, errT := sqltk.ExecV(dbT, `UPDATE ORG SET `+bufT.String()+` WHERE ID=`+sqltk.FormatSQLValue(orgIDT)+`;`)
+		_, c2, errT := sqltk.ExecV(dbT, `UPDATE ORG SET `+bufT.String()+`, TIME_STAMP=NOW() WHERE ID=`+sqltk.FormatSQLValue(orgIDT)+`;`)
 
 		if errT != nil {
 			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
@@ -1782,14 +2103,14 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 			}
 		}
 
-		_, c2, errT := sqltk.ExecV(dbT, `UPDATE ORG_GROUP SET `+bufT.String()+` WHERE ID=`+sqltk.FormatSQLValue(groupIDT)+`;`)
+		c1, c2, errT := sqltk.ExecV(dbT, `UPDATE ORG_GROUP SET `+bufT.String()+`, TIME_STAMP=NOW() WHERE ID=`+sqltk.FormatSQLValue(groupIDT)+`;`)
 
 		if errT != nil {
 			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
 		}
 
 		if c2 < 1 {
-			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", "no rows affects"), req)
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v (%v)", "no rows affects"+tk.Int64ToStr(c1), `UPDATE ORG_GROUP SET `+bufT.String()+`, TIME_STAMP=NOW() WHERE ID=`+sqltk.FormatSQLValue(groupIDT)+`;`), req)
 		}
 
 		_, _, errT = sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_LINK WHERE ORG_GROUP_ID=`+groupIDT+` AND APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`'`)
@@ -1798,6 +2119,7 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 		}
 
 		linksT := tk.Trim(paraMapT["links"])
+		linksTypeT := strings.ToLower(tk.Trim(paraMapT["linksType"]))
 
 		var linksAryT []string = nil
 
@@ -1806,13 +2128,34 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 		}
 
 		if linksAryT != nil {
+			if linksTypeT == "group-group" {
+				_, _, errT := sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_GROUP_LINK WHERE APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' AND UP_GROUP_ID='`+groupIDT+`'`)
+				if errT != nil {
+					return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+				}
+
+			} else {
+				_, _, errT := sqltk.ExecV(dbT, `DELETE FROM ORG_GROUP_LINK WHERE APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' AND ORG_GROUP_ID='`+groupIDT+`'`)
+				if errT != nil {
+					return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+				}
+
+			}
+
 			for _, v := range linksAryT {
 				vi := tk.StrToInt(v, -1)
 				if vi < 0 {
 					return tk.GenerateJSONPResponse("fail", tk.Spr("invalid links item: %v", v), req)
 				}
 
-				_, c2i, errT := sqltk.ExecV(dbT, `INSERT INTO ORG_GROUP_LINK (APP_CODE, ORG_GROUP_ID, ORG_ID) VALUES('`+sqltk.FormatSQLValue(appCodeT)+`', `+groupIDT+`, `+tk.IntToStr(vi)+`)`)
+				var sqlT string
+
+				if linksTypeT == "group-group" {
+					sqlT = `INSERT INTO ORG_GROUP_GROUP_LINK (APP_CODE, UP_GROUP_ID, GROUP_ID) VALUES('` + sqltk.FormatSQLValue(appCodeT) + `', ` + groupIDT + `, ` + tk.IntToStr(vi) + `)`
+				} else {
+					sqlT = `INSERT INTO ORG_GROUP_LINK (APP_CODE, ORG_GROUP_ID, ORG_ID) VALUES('` + sqltk.FormatSQLValue(appCodeT) + `', ` + groupIDT + `, ` + tk.IntToStr(vi) + `)`
+				}
+				_, c2i, errT := sqltk.ExecV(dbT, sqlT)
 
 				if errT != nil {
 					return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
@@ -1853,6 +2196,54 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 			sqlT = `SELECT * FROM ORG WHERE APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `' WHERE TYPE='` + sqltk.FormatSQLValue(typeT) + `'`
 		} else {
 			sqlT = `SELECT * FROM ORG WHERE APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `'`
+		}
+
+		sqlRsT, errT := sqltk.QueryDBNSS(dbT, sqlT)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
+		}
+
+		if len(sqlRsT) < 1 {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action length failed: %v", len(sqlRsT)), req)
+		}
+
+		if tk.ToLower(paraMapT["format"]) == "mss" {
+			return tk.GenerateJSONPResponseWithMore("success", tk.TableToMSSJSON(sqlRsT), req)
+		}
+
+		return tk.GenerateJSONPResponseWithMore("success", tk.ObjectToJSON(sqlRsT), req)
+
+	case "getOrgListByUpID":
+		authT := paraMapT["auth"]
+
+		appCodeT := paraMapT["appCode"]
+
+		if checkPrimaryAuth(authT) != "" {
+			if checkAuth(appCodeT, authT) != "" {
+				return tk.GenerateJSONPResponse("fail", "auth failed", req)
+			}
+		}
+
+		dbT, errT := sqltk.ConnectDBNoPing(configG.DBType, configG.DBConnectString)
+		if errT != nil {
+			return tk.GenerateJSONPResponse("fail", tk.Spr("failed to connect DB: %v", errT), req)
+		}
+
+		defer dbT.Close()
+
+		upIDT := tk.Trim(paraMapT["upID"])
+		if upIDT == "" {
+			return tk.GenerateJSONPResponse("fail", "empty up id", req)
+		}
+
+		typeT := tk.Trim(paraMapT["type"])
+
+		var sqlT string
+
+		if typeT != "" {
+			sqlT = `SELECT * FROM ORG WHERE APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `' WHERE TYPE='` + sqltk.FormatSQLValue(typeT) + `'` + ` AND UP_ID=` + upIDT
+		} else {
+			sqlT = `SELECT * FROM ORG WHERE APP_CODE='` + sqltk.FormatSQLValue(appCodeT) + `' AND UP_ID=` + upIDT
 		}
 
 		sqlRsT, errT := sqltk.QueryDBNSS(dbT, sqlT)
@@ -2063,7 +2454,9 @@ func doJapi(res http.ResponseWriter, req *http.Request) string {
 
 		defer dbT.Close()
 
-		sqlRsT, errT := sqltk.QueryDBNSS(dbT, `SELECT c.APP_CODE, a.ORG_GROUP_ID, c.NAME as ORG_GROUP_NAME, c.CODE as ORG_GROUP_CODE, c.REMARK as REMARK, group_concat(b.NAME order by b.NAME DESC SEPARATOR ',') as ORGS, group_concat(b.ID order by b.ID SEPARATOR ',') as ORGIDS from ORG_GROUP_LINK a, ORG b, ORG_GROUP c WHERE c.APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' and a.ORG_GROUP_ID=`+sqltk.FormatSQLValue(groupIDT)+` and a.ORG_ID=b.ID and a.ORG_GROUP_ID=c.ID group by a.ORG_GROUP_ID`)
+		sqlRsT, errT := sqltk.QueryDBNSS(dbT, `SELECT a.APP_CODE, c.ID, c.NAME as ORG_GROUP_NAME, c.CODE as ORG_GROUP_CODE, c.REMARK as REMARK, group_concat(b.ID order by b.ID DESC SEPARATOR ',') as SUB_GROUPS, group_concat(b.NAME order by b.NAME DESC SEPARATOR ',') as SUB_GROUP_NAMES from ORG_GROUP_GROUP_LINK a, ORG_GROUP b, ORG_GROUP c WHERE a.APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' and a.UP_GROUP_ID=`+sqltk.FormatSQLValue(groupIDT)+` and a.GROUP_ID=b.ID and a.UP_GROUP_ID=c.ID and c.LEVEL_INDEX=2 group by c.ID`)
+
+		// sqlRsT, errT := sqltk.QueryDBNSS(dbT, `SELECT c.APP_CODE, a.ORG_GROUP_ID, c.NAME as ORG_GROUP_NAME, c.CODE as ORG_GROUP_CODE, c.REMARK as REMARK, group_concat(b.NAME order by b.NAME DESC SEPARATOR ',') as ORGS, group_concat(b.ID order by b.ID SEPARATOR ',') as ORGIDS from ORG_GROUP_LINK a, ORG b, ORG_GROUP c WHERE c.APP_CODE='`+sqltk.FormatSQLValue(appCodeT)+`' and a.ORG_GROUP_ID=`+sqltk.FormatSQLValue(groupIDT)+` and a.ORG_ID=b.ID and a.ORG_GROUP_ID=c.ID group by a.ORG_GROUP_ID`)
 		if errT != nil {
 			return tk.GenerateJSONPResponse("fail", tk.Spr("DB action failed: %v", errT), req)
 		}
