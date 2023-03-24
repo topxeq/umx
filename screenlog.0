@@ -1,0 +1,685 @@
+reqT: /login
+"capi.fltrp.com"
+[2021-12-06 13:16:33] REQ: "login" (map[string]string{"appCode":"it01", "auth":"e6a96e394ea7966f1dcb15c777c27fdd", "password":"9cc45dfa12d5d4fc94b9e97accb7eacb", "req":"login", "user":"adm"})
+reqT: /default
+it01 adm itAdmin
+reqT: /default
+it01 adm itAdmin
+[2021-12-06 13:16:38] REQ: "loadContent" (map[string]string{"contentCode":"testmicroservice.html", "req":"loadContent", "txtoken":"699A3C52FBF2593B394C574F470A494F46555F200B031E1B171F2127160A2B2520"})
+it01 adm itAdmin
+it01 adm itAdmin
+RequestURI: /wms/tky1
+[2021-12-06 13:19:29] example, params: map[auth:fltrp2404 input:{"req": "zxtd"}]
+inputG: {"req": "zxtd"}
+"http://129.0.0.218:8000/sap/rest_syn_data"
+url.Values{"auth":[]string{"XXXXXX"}, "data":[]string{"{\"DNO\":\"ALL\",\"TNAME\":\"ZXTD\"}"}, "sap-client":[]string{"221"}, "sname":[]string{"GET_TEXT"}}
+reqT: /default
+it01 adm itAdmin
+[2021-12-06 13:19:46] REQ: "loadContent" (map[string]string{"contentCode":"testmicroservice.html", "req":"loadContent", "txtoken":"699A3C52FBF2593B394C574F470A494F46555F200B031E1B171F2127160A2B2520"})
+it01 adm itAdmin
+[2021-12-06 13:19:48] REQ: "getMSCode" (map[string]string{"req":"getMSCode", "serviceName":"example", "serviceType":"wms", "txtoken":"699A3C52FBF2593B394C574F470A494F46555F200B031E1B171F2127160A2B2520"})
+it01 adm itAdmin
+it01 adm itAdmin
+it01 adm itAdmin
+RequestURI: /wms/viewlog
+RequestURI: /wms/tky1
+[2021-12-06 13:20:57] example, params: map[auth:fltrp2404 input:{"req": "zxtd"}]
+inputG: {"req": "zxtd"}
+"http://129.0.0.218:8000/sap/rest_syn_data"
+url.Values{"auth":[]string{"XXXXXX"}, "data":[]string{"{\"DNO\":\"ALL\",\"TNAME\":\"ZXTD\"}"}, "sap-client":[]string{"221"}, "sname":[]string{"GET_TEXT"}}
+RequestURI: /wms/tky1
+[2021-12-06 13:20:59] example, params: map[auth:fltrp2404 input:{"req": "zxtd"}]
+inputG: {"req": "zxtd"}
+"http://129.0.0.218:8000/sap/rest_syn_data"
+url.Values{"auth":[]string{"XXXXXX"}, "data":[]string{"{\"DNO\":\"ALL\",\"TNAME\":\"ZXTD\"}"}, "sap-client":[]string{"221"}, "sname":[]string{"GET_TEXT"}}
+RequestURI: /wms/viewlog
+RequestURI: /wms/tky1
+[2021-12-06 13:21:10] example, params: map[auth:fltrp2404 input:{"req": "zxtd"}]
+inputG: {"req": "zxtd"}
+"http://129.0.0.218:8000/sap/rest_syn_data"
+url.Values{"auth":[]string{"XXXXXX"}, "data":[]string{"{\"DNO\":\"ALL\",\"TNAME\":\"ZXTD\"}"}, "sap-client":[]string{"221"}, "sname":[]string{"GET_TEXT"}}
+RequestURI: /wms/tky1
+[2021-12-06 13:21:11] example, params: map[auth:fltrp2404 input:{"req": "zxtd"}]
+inputG: {"req": "zxtd"}
+"http://129.0.0.218:8000/sap/rest_syn_data"
+url.Values{"auth":[]string{"XXXXXX"}, "data":[]string{"{\"DNO\":\"ALL\",\"TNAME\":\"ZXTD\"}"}, "sap-client":[]string{"221"}, "sname":[]string{"GET_TEXT"}}
+RequestURI: /wms/tky1
+[2021-12-06 13:21:11] example, params: map[auth:fltrp2404 input:{"req": "zxtd"}]
+inputG: {"req": "zxtd"}
+"http://129.0.0.218:8000/sap/rest_syn_data"
+url.Values{"auth":[]string{"XXXXXX"}, "data":[]string{"{\"DNO\":\"ALL\",\"TNAME\":\"ZXTD\"}"}, "sap-client":[]string{"221"}, "sname":[]string{"GET_TEXT"}}
+RequestURI: /wms/tky1
+[2021-12-06 13:21:11] example, params: map[auth:fltrp2404 input:{"req": "zxtd"}]
+inputG: {"req": "zxtd"}
+"http://129.0.0.218:8000/sap/rest_syn_data"
+url.Values{"auth":[]string{"XXXXXX"}, "data":[]string{"{\"DNO\":\"ALL\",\"TNAME\":\"ZXTD\"}"}, "sap-client":[]string{"221"}, "sname":[]string{"GET_TEXT"}}
+RequestURI: /wms/tky1
+[2021-12-06 13:21:14] example, params: map[auth:fltrp2404 input:{"req": "zxtd"}]
+inputG: {"req": "zxtd"}
+"http://129.0.0.218:8000/sap/rest_syn_data"
+url.Values{"auth":[]string{"XXXXXX"}, "data":[]string{"{\"DNO\":\"ALL\",\"TNAME\":\"ZXTD\"}"}, "sap-client":[]string{"221"}, "sname":[]string{"GET_TEXT"}}
+RequestURI: /wms/tky1
+[2021-12-06 13:21:33] example, params: map[auth:fltrp2404 input:{"req": "oaApi"}]
+inputG: {"req": "oaApi"}
+RequestURI: /wms/tky1
+[2021-12-06 13:21:38] example, params: map[auth:fltrp2404 input:{"req": "zxtd"}]
+inputG: {"req": "zxtd"}
+"http://129.0.0.218:8000/sap/rest_syn_data"
+url.Values{"auth":[]string{"XXXXXX"}, "data":[]string{"{\"DNO\":\"ALL\",\"TNAME\":\"ZXTD\"}"}, "sap-client":[]string{"221"}, "sname":[]string{"GET_TEXT"}}
+reqT: /ms
+[2021/12/06 13:23:10] host: capi.fltrp.com
+外网访问
+inputG: {"ProcessInstId":"02a1b7b9-9271-4b7b-b0e5-437806643ff4"}
+map[ProcessInstId:02a1b7b9-9271-4b7b-b0e5-437806643ff4]
+reqT: /ms
+[2021/12/06 13:38:06] host: capi.fltrp.com
+外网访问
+inputG: {"ProcessInstId":"8398821b-c879-49e1-9303-2b6b022f0fd2"}
+map[ProcessInstId:8398821b-c879-49e1-9303-2b6b022f0fd2]
+reqT: /ms
+[2021/12/06 13:42:11] host: capi.fltrp.com
+外网访问
+inputG: {"ProcessInstId":"5f75ab2c-e188-42b7-9abf-0596d6be3f08"}
+map[ProcessInstId:5f75ab2c-e188-42b7-9abf-0596d6be3f08]
+[2021-12-06 13:48:47] REQ: "vendorFuzzSearch" (map[string]string{"name":"仁青卓玛", "req":"vendorFuzzSearch"})
+[2021-12-06 13:48:50] REQ: "vendorInfoQuery" (map[string]string{"id":"0000234928", "req":"vendorInfoQuery"})
+[2021-12-06 13:49:16] REQ: "vendorFuzzSearch" (map[string]string{"name":"赵俊林", "req":"vendorFuzzSearch"})
+[2021-12-06 13:49:18] REQ: "vendorInfoQuery" (map[string]string{"id":"0000234926", "req":"vendorInfoQuery"})
+[2021-12-06 13:49:27] REQ: "vendorInfoQuery" (map[string]string{"id":"0000234928", "req":"vendorInfoQuery"})
+[2021-12-06 13:49:30] REQ: "modifyVendorInfo" (map[string]string{"Akont":"0022020301", "Bankl":"", "Bankn":"", "Banks":"", "Bukrs":"1000", "City":"甘肃", "Country":"CN", "District":"6217004260025281098", "Ekorg":"", "Email":"", "Extension":"001", "Fax":"623024200012120321", "Khh":"中国建设银行甘肃分行", "Ktokk":"ZV06", "Lifnr":"0000234928", "Mobile":"", "Name1":"仁青卓玛", "Name2":"", "Postlcod":"", "Region":"", "Sort1":"", "Street":"", "Telephone":"", "Telf1":"", "Title":"0004", "Verkf":"", "Waers":"", "req":"modifyVendorInfo"})
+bodyT： "<Envelope xmlns=\"http://schemas.xmlsoap.org/soap/envelope/\">\n\t\t\t<Body>\n\t\t\t\t<ZvendorUpdate xmlns=\"urn:sap-com:document:sap:soap:functions:mc-style\">\n\t\t\t\t\t<Akont xmlns=\"\">0022020301</Akont>\n\t\t\t\t\t<Bankl xmlns=\"\"></Bankl>\n\t\t\t\t\t<Bankn xmlns=\"\"></Bankn>\n\t\t\t\t\t<Banks xmlns=\"\"></Banks>\n\t\t\t\t\t<Bukrs xmlns=\"\">1000</Bukrs>\n\t\t\t\t\t<City xmlns=\"\">甘肃</City>\n\t\t\t\t\t<Country xmlns=\"\">CN</Country>\n\t\t\t\t\t<District xmlns=\"\">6217004260025281098</District>\n\t\t\t\t\t<Ekorg xmlns=\"\"></Ekorg>\n\t\t\t\t\t<Email xmlns=\"\"></Email>\n\t\t\t\t\t<Extension xmlns=\"\">001</Extension>\n\t\t\t\t\t<Fax xmlns=\"\">623024200012120321</Fax>\n\t\t\t\t\t<Iresv1 xmlns=\"\"></Iresv1>\n\t\t\t\t\t<Iresv2 xmlns=\"\"></Iresv2>\n\t\t\t\t\t<Iresv3 xmlns=\"\"></Iresv3>\n\t\t\t\t\t<Iresv4 xmlns=\"\"></Iresv4>\n\t\t\t\t\t<Khh xmlns=\"\">中国建设银行甘肃分行</Khh>\n\t\t\t\t\t<Ktokk xmlns=\"\">ZV06</Ktokk>\n\t\t\t\t\t<Lifnr xmlns=\"\">0000234928</Lifnr>\n\t\t\t\t\t<Mobile xmlns=\"\"></Mobile>\n\t\t\t\t\t<Name1 xmlns=\"\">仁青卓玛</Name1>\n\t\t\t\t\t<Name2 xmlns=\"\"></Name2>\n\t\t\t\t\t<Postlcod xmlns=\"\"></Postlcod>\n\t\t\t\t\t<Region xmlns=\"\"></Region>\n\t\t\t\t\t<Sort1 xmlns=\"\"></Sort1>\n\t\t\t\t\t<Street xmlns=\"\"></Street>\n\t\t\t\t\t<Telephone xmlns=\"\"></Telephone>\n\t\t\t\t\t<Telf1 xmlns=\"\"></Telf1>\n\t\t\t\t\t<Title xmlns=\"\">0004</Title>\n\t\t\t\t\t<Verkf xmlns=\"\"></Verkf>\n\t\t\t\t\t<Waers xmlns=\"\"></Waers>\n\t\t\t\t\t<Webre xmlns=\"\"></Webre>\n\t\t\t\t\t<Zterm xmlns=\"\"></Zterm>\n\t\t\t\t</ZvendorUpdate>\n\t\t\t</Body>\n\t\t</Envelope>"
+"<soap-env:Envelope xmlns:soap-env=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap-env:Header/><soap-env:Body><n0:ZvendorUpdateResponse xmlns:n0=\"urn:sap-com:document:sap:soap:functions:mc-style\"><Emsg>0000234928</Emsg><Eresv1/><Eresv2/><Esuccess>Y</Esuccess></n0:ZvendorUpdateResponse></soap-env:Body></soap-env:Envelope>"
+RequestURI: /wms/viewlog
+RequestURI: /wms/zxtd
+RequestURI: /wms/tky1
+[2021-12-06 13:52:26] example, params: map[]
+inputG: 
+RequestURI: /wms/viewlog
+RequestURI: /wms/viewlog
+
+
+
+
+^Csignal: interrupt
+root@fltrp-sr-c-01:/api2404# go run api2404g.go
+"/api2404/config.json"
+main.ConfigType{UMXDBType:"mysql", UMXDBConnectString:"root:Fltrp#8881@tcp(129.0.1.157:3306)/umx2404", UMXURL:"https://capi.fltrp.com:7431/japi", UMXBACDBType:"mysql", UMXBACDBConnectString:"root:Fltrp#8881@tcp(129.0.1.157:3306)/umx2404", UMXBACURL:"https://capi.fltrp.com:7431/japi", EditorDBType:"mysql", EditorDBConnectString:"root:Fltrp#8881@tcp(129.0.1.157:3306)/editor", DBType:"mysql", DBConnectString:"root:Fltrp#8881@tcp(129.0.1.157:3306)/baoding", MainSecret:"UMX_easy", TokenSecret:"is_Token", TokenExpire:"1440", Apps:map[string]main.AppType{"baoding01":main.AppType{AppCode:"baoding01", AppSecret:"baobao01", AppName:"报定系统-高英", AppRemark:"", AppResv1:""}, "ed01":main.AppType{AppCode:"ed01", AppSecret:"eded06", AppName:"编辑辅助系统", AppRemark:"", AppResv1:""}, "fn01":main.AppType{AppCode:"fn01", AppSecret:"fnfn08", AppName:"财务工具集", AppRemark:"", AppResv1:""}, "fw01":main.AppType{AppCode:"fw01", AppSecret:"fwfw05", AppName:"法务平台", AppRemark:"", AppResv1:""}, "hr01":main.AppType{AppCode:"hr01", AppSecret:"hrhr01", AppName:"人力资源工具集", AppRemark:"", AppResv1:""}, "it01":main.AppType{AppCode:"it01", AppSecret:"itit03", AppName:"信息化管理平台", AppRemark:"", AppResv1:""}, "wl01":main.AppType{AppCode:"wl01", AppSecret:"wlwl02", AppName:"物流信息平台", AppRemark:"", AppResv1:""}}, TestMode:"true"}
+[2021/12/06 13:53:24] try starting ssl server on :7447...
+[2021/12/06 13:53:24] try starting server on :7446...
+^Csignal: interrupt
+root@fltrp-sr-c-01:/api2404# history
+    1  kill 22973
+    2  ps -ef | grep api2404
+    3  go run api2404g.go
+    4  go run api2404g.go
+    5  screen -x api2404g
+    6  z tk
+    7  cd ..
+    8  cd sqltk
+    9  git pull
+   10  gi
+   11  cd ..
+   12  cd gox
+   13  gi
+   14  cd ..
+   15  echo $CLASSPATH
+   16  vi ~/.profile
+   17  echo $CLASSPATH
+   18  source ~/.profile
+   19  echo $CLASSPATH
+   20  vi ~/.profile
+   21  ll
+   22  exit
+   23  echo $CLASSPATH
+   24  vi ~/.profile
+   25  vi ~/.bash_profile 
+   26  vi ~/.profile
+   27  vi ~/.bash_profile 
+   28  exit
+   29  echo $CLASSPATH
+   30  vi ~/.bash_profile
+   31  vi ~/.profile
+   32  exit
+   33  cd /tmp
+   34  cd /tmpx
+   35  gox
+   36  screen -x api2404g
+   37  apt install samba
+   38  apt install smbclient
+   39   samba -V
+   40  vi /etc/samba/smb.conf
+   41  mkdir /tmps
+   42  smbpasswd -a root
+   43  /etc/init.d/samba restart
+   44  service samba restart
+   45  samba
+   46  which samba
+   47  service smbd restart
+   48  ifconfig
+   49  vi /etc/samba/smb.conf
+   50  service smbd restart
+   51  history
+   52  vi /etc/samba/smb.conf
+   53  service smbd restart
+   54  service smbd restart
+   55  vi /etc/samba/smb.conf
+   56  service smbd restart
+   57  echo $CLASSPATH
+   58  cd /javaprjs
+   59  ls
+   60  cd Docxx
+   61  ls
+   62  j
+   63  j Docxx.java
+   64  j Docxx.java
+   65  j Docxx.java
+   66  java Docxx 
+   67  java Docxx /tmps/1p.docx 
+   68  java Docxx 
+   69  j Docxx.java
+   70  j Docxx.java -Xlint:deprecation
+   71  j Docxx.java -Xlint:deprecation
+   72  j Docxx.java -Xlint:deprecation
+   73  j Docxx.java
+   74  java Docxx 
+   75  echo $CLASSPATH
+   76  ls /libs/javalibs/
+   77  vi ~/.bash_profile 
+   78  source ~/.bash_profile 
+   79  java Docxx 
+   80  vi ~/.bash_profile 
+   81  source ~/.bash_profile 
+   82  java Docxx 
+   83  vi ~/.bash_profile 
+   84  source ~/.bash_profile 
+   85  java Docxx 
+   86  echo $CLASSPATH
+   87  j Docxx.java
+   88  j Docxx.java
+   89  which java
+   90  cd
+   91  java /javaprjs/Docxx
+   92  java -classpath /javaprjs Docxx
+   93  ls /javaprjs/Docxx 
+   94  java -classpath /javaprjs/Docx Docxx
+   95  java -classpath /javaprjs/Docxx Docxx
+   96  vi ~/.bash_profile 
+   97  source ~/.bash_profile 
+   98  java Docxx
+   99  cd ~/goprjs/
+  100  cd src
+  101  cd github.com/
+  102  cd topxeq/
+  103  cd tk
+  104  git pull
+  105  cd ..
+  106  cd gox
+  107  gi
+  108  echo $CLASSPATH
+  109  cd /libs/javalibs/
+  110  ls
+  111  screen -x api2404g
+  112  screen -x eda
+  113  cd /tmpx
+  114  ls
+  115  cd /api2404g
+  116  cd /api2404
+  117  go run api2404g.go -port=7494 -sslPort=7495
+  118  go run api2404g.go -port=7494 -sslPort=7495
+  119  go run api2404g.go -port=7494 -sslPort=7495
+  120  go run api2404g.go -port=7494 -sslPort=7495
+  121  go run api2404g.go -port=7494 -sslPort=7495
+  122  go run api2404g.go -port=7494 -sslPort=7495
+  123  go run api2404g.go -port=7494 -sslPort=7495
+  124  go run api2404g.go -port=7494 -sslPort=7495
+  125  go run api2404g.go -port=7494 -sslPort=7495
+  126  go run api2404g.go -port=7494 -sslPort=7495
+  127  go run api2404g.go -port=7494 -sslPort=7495
+  128  cd /tmpx
+  129  ls
+  130  gox
+  131  gox
+  132  gox
+  133  which java
+  134  j /javaprjs/Docxx/Docxx.java
+  135  ls
+  136  screen -x api2404g
+  137  screen -x api2404g
+  138  screen -x api2404g
+  139  screen -x api2404g
+  140  curl http://red.fltrp.com/wms/redi?url=https://audio.fltrp.com/audiolist.shtml?id=11
+  141  curl -i http://red.fltrp.com/wms/redi?url=https://audio.fltrp.com/audiolist.shtml?id=11
+  142  echo $CLASSPATH
+  143  gox -gopath calculatorSciter.gox
+  144  apt install easytag
+  145  easytag
+  146  easytag
+  147  z tk
+  148  git pull
+  149  gi
+  150  cd ..
+  151  cd qlang/
+  152  git pull
+  153  gi
+  154  cd ..
+  155  cd gox
+  156  git pull
+  157  gi
+  158  gox
+  159  cd ..
+  160  cd goxc
+  161  gi
+  162  git pull
+  163  gi
+  164  cd ..
+  165  z bin
+  166  uploadgox
+  167  z goxn
+  168  git pull
+  169  gi
+  170  cd ..
+  171  cd tk
+  172  git pull
+  173  cd ..
+  174  cd qlang
+  175  git pull
+  176  cd ..
+  177  cd gox
+  178  git pull
+  179  gi
+  180  cd ..
+  181  cd goxc
+  182  git pull
+  183  gi
+  184  z bin
+  185  uploadgox
+  186  z goxn
+  187  git pull
+  188  cd ..
+  189  cd tk
+  190  git pull
+  191  cd ..
+  192  cd qlang/
+  193  git pull
+  194  git pull
+  195  cd ..
+  196  cd gox
+  197  git pull
+  198  gi
+  199  cd ..
+  200  cd goxc
+  201  git pull
+  202  gi
+  203  z bin
+  204  uploadgox
+  205  z goxn
+  206  git pull
+  207  gi
+  208  cd ..
+  209  cd tk
+  210  git pull
+  211  cd ..
+  212  cd qlang/
+  213  git pull
+  214  cd ..
+  215  cd gox
+  216  git pull
+  217  gi
+  218  cd ..
+  219  cd goxc
+  220  git pull
+  221  gi
+  222  cd ..
+  223  cd goxn
+  224  git pull
+  225  gi
+  226  z bin
+  227  uploadgox
+  228  z tk
+  229  git pull
+  230  git pull
+  231  cd ..
+  232  cd qlang
+  233  git pull
+  234  cd ..
+  235  cd gox
+  236  git pull
+  237  gi
+  238  cd ..
+  239  cd goxc
+  240  git pull
+  241  gi
+  242  z bin
+  243  uploadgox
+  244  z goxn
+  245  git pull
+  246  cd /api2404
+  247  ls
+  248  go run api2404g.go -port=7494 -sslPort=7495
+  249  go run api2404g.go -port=7494 -sslPort=7495
+  250  go mod download github.com/jhillyerd/enmime
+  251  go mod tidy
+  252  go run api2404g.go -port=7494 -sslPort=7495
+  253  go run api2404g.go -port=7494 -sslPort=7495
+  254  go run api2404g.go -port=7494 -sslPort=7495
+  255  go run api2404g.go -port=7494 -sslPort=7495
+  256  go run api2404g.go -port=7494 -sslPort=7495
+  257  go run api2404g.go -port=7494 -sslPort=7495
+  258  go run api2404g.go -port=7494 -sslPort=7495
+  259  go run api2404g.go -port=7494 -sslPort=7495
+  260  go run api2404g.go -port=7494 -sslPort=7495
+  261  go run api2404g.go -port=7494 -sslPort=7495
+  262  go run api2404g.go -port=7494 -sslPort=7495
+  263  go run api2404g.go -port=7494 -sslPort=7495
+  264  go run api2404g.go -port=7494 -sslPort=7495
+  265  go run api2404g.go -port=7494 -sslPort=7495
+  266  go run api2404g.go -port=7494 -sslPort=7495
+  267  go run api2404g.go -port=7494 -sslPort=7495
+  268  go run api2404g.go -port=7494 -sslPort=7495
+  269  go run api2404g.go -port=7494 -sslPort=7495
+  270  go run api2404g.go -port=7494 -sslPort=7495
+  271  go run api2404g.go -port=7494 -sslPort=7495
+  272  go run api2404g.go -port=7494 -sslPort=7495
+  273  go run api2404g.go -port=7494 -sslPort=7495
+  274  go run api2404g.go -port=7494 -sslPort=7495
+  275  go run api2404g.go -port=7494 -sslPort=7495
+  276  go run api2404g.go -port=7494 -sslPort=7495
+  277  go run api2404g.go -port=7494 -sslPort=7495
+  278  go run api2404g.go -port=7494 -sslPort=7495
+  279  go run api2404g.go -port=7494 -sslPort=7495
+  280  go run api2404g.go -port=7494 -sslPort=7495
+  281  ls
+  282  go run api2404g.go -port=7494 -sslPort=7495
+  283  go run api2404g.go -port=7494 -sslPort=7495
+  284  go run api2404g.go -port=7494 -sslPort=7495
+  285  go run api2404g.go -port=7494 -sslPort=7495
+  286  go run api2404g.go -port=7494 -sslPort=7495
+  287  go run api2404g.go -port=7494 -sslPort=7495
+  288  go run api2404g.go -port=7494 -sslPort=7495
+  289  go run api2404g.go -port=7494 -sslPort=7495
+  290  go run api2404g.go -port=7494 -sslPort=7495
+  291  go run api2404g.go -port=7494 -sslPort=7495
+  292  go run api2404g.go -port=7494 -sslPort=7495
+  293  go run api2404g.go -port=7494 -sslPort=7495
+  294  go run api2404g.go -port=7494 -sslPort=7495
+  295  go run api2404g.go -port=7494 -sslPort=7495
+  296  go run api2404g.go -port=7494 -sslPort=7495
+  297  go run api2404g.go -port=7494 -sslPort=7495
+  298  go run api2404g.go -port=7494 -sslPort=7495
+  299  go run api2404g.go -port=7494 -sslPort=7495
+  300  go run api2404g.go -port=7494 -sslPort=7495
+  301  go run api2404g.go -port=7494 -sslPort=7495
+  302  go run api2404g.go -port=7494 -sslPort=7495
+  303  go run api2404g.go -port=7494 -sslPort=7495
+  304  go run api2404g.go -port=7494 -sslPort=7495
+  305  go run api2404g.go -port=7494 -sslPort=7495
+  306  go run api2404g.go -port=7494 -sslPort=7495
+  307  go run api2404g.go -port=7494 -sslPort=7495
+  308  go run api2404g.go -port=7494 -sslPort=7495
+  309  go run api2404g.go -port=7494 -sslPort=7495
+  310  go run api2404g.go -port=7494 -sslPort=7495
+  311  go run api2404g.go -port=7494 -sslPort=7495
+  312  go run api2404g.go -port=7494 -sslPort=7495
+  313  go run api2404g.go -port=7494 -sslPort=7495
+  314  go run api2404g.go -port=7494 -sslPort=7495
+  315  go run api2404g.go -port=7494 -sslPort=7495
+  316  cd /api2404/
+  317  ls
+  318  go run api2404g.go -port=7494 -sslPort=7495
+  319  go run api2404g.go -port=7494 -sslPort=7495
+  320  go run api2404g.go -port=7494 -sslPort=7495
+  321  go run api2404g.go -port=7494 -sslPort=7495
+  322  screen -x api2404g
+  323  screen -x api2404g
+  324  screen -x api2404
+  325  screen -x api2404
+  326  screen -x api2404
+  327  cd /api2404/
+  328  ls
+  329  cd logs
+  330  ls
+  331  crontab -l
+  332  /root/goprjs/bin/goxc -remote http://topget.org/xaf/scripts/works/collectLogisticsBatchHuarui.gox
+  333  /root/goprjs/bin/goxc -remote http://topget.org/xaf/scripts/works/collectLogisticsBatchHuarui.gox -v
+  334  /root/goprjs/bin/goxc -remote http://topget.org/xaf/scripts/works/collectLogisticsBatchHuarui.gox -start=2021-08-20 -v
+  335  crontab -e
+  336  crontab -l
+  337  crontab -e
+  338  service cron restart
+  339  top
+  340  screen -x api2404g
+  341  screen -x api2404g
+  342  top
+  343  cd /tmpx
+  344  screen -x api2404g
+  345  cd /api2404/
+  346  ls
+  347  go run api2404g.go 
+  348  go run api2404g.go -port=7494 -sslPort=7495
+  349  go run api2404g.go -port=7494 -sslPort=7495
+  350  go run api2404g.go -port=7494 -sslPort=7495
+  351  top
+  352  ps -ef
+  353  screen -ls
+  354  cd /tmpx
+  355  goxc -cloud works/umx2404.gox -cmd=init
+  356  cd /umx2404
+  357  ls
+  358  cp /umx/config.json .
+  359  vi config.json 
+  360  goxc -cloud works/umx2404.gox
+  361  cp /umx/server.crt .
+  362  cp /umx/server.key .
+  363  goxc -cloud works/umx2404.gox
+  364  exit
+  365  cd /api2404
+  366  ls
+  367  go run api2404g.go -port=7494 -sslPort=7495
+  368  go mod tidy
+  369  set https_proxy=http://192.168.100.176:7480
+  370  go mod tidy
+  371  go get -v github.com/mholt/archiver/v3
+  372  go run api2404g.go -port=7494 -sslPort=7495
+  373  z tk
+  374  go run api2404g.go -port=7494 -sslPort=7495
+  375  java
+  376  go run api2404g.go -port=7494 -sslPort=7495
+  377  set https_proxy=http://192.168.100.176:7480
+  378  set https_proxy=
+  379  go run api2404g.go -port=7494 -sslPort=7495
+  380  exit
+  381  ls
+  382  pwd
+  383  top
+  384  screen -ls
+  385  screen -x api2404p
+  386  top
+  387  screen -ls
+  388  screen -x umx2404
+  389  screen -ls
+  390  screen -x eda
+  391  screen -ls
+  392  screen -x umx
+  393  screen -ls
+  394  screen -x baoding
+  395  screen -x shupei
+  396  ls
+  397  screen -ls
+  398  screen -x api2404
+  399  screen -x api2404g
+  400  ls
+  401  top
+  402  nload
+  403  ls
+  404  screen -x api2404g
+  405  screen -ls
+  406  screen -x umx2404
+  407  screen -x eda
+  408  top
+  409  screen -x api2404g
+  410  screen -x api2404g
+  411  top
+  412  screen -x api2404
+  413  screen -x api2404
+  414  screen -x api2404g
+  415  screen -x shupei
+  416  top
+  417  screen -x api2404g
+  418  top
+  419  top
+  420  nload
+  421  screen -x api2404
+  422  top
+  423  screen -x api2404
+  424  top
+  425  screen -x api2404
+  426  screen -x api2404
+  427  top
+  428  screen -x api2404
+  429  cd /api2404
+  430  ls
+  431  go run api2404g.go -port=7494 -sslPort=7495
+  432  screen -x eda
+  433  top
+  434  top
+  435  screen -x api2404g
+  436  screen -x eda
+  437  screen -x eda
+  438  cd ~/goprjs/src/github.com/topxeq/umx
+  439  go run umx.go
+  440  ps -ef | grep umx
+  441  screen -ls
+  442  umx stop
+  443  go run umx.go
+  444  go mod tidy
+  445  go run umx.go
+  446  exit
+  447  cd ~/goprjs/src/baoding
+  448  go run baoding.go
+  449  ps -ef | grep baoding
+  450  baoding -stop
+  451  baoding stop
+  452  go run baoding.go
+  453  go mod tidy
+  454  go run baoding.go
+  455  exit
+  456  cd ~/goprjs/src/shupei
+  457  go run shupei.go
+  458  o run shupei.go
+  459  go run shupei.go
+  460  go mod tidy
+  461  go run shupei.go
+  462  exit
+  463  history
+  464  exit
+  465  cd api2404/logs
+  466  cd /api2404/logs
+  467  goxc -remote http://topget.org/xaf/scripts/works/api2404.gox
+  468  exit
+  469  cd /api2404
+  470  python3 api2404p.py
+  471  exit
+  472  cd /api2404
+  473  go run api2404g.go
+  474  go mod download github.com/xuri/excelize/v2
+  475  go run api2404g.go
+  476  go mod tidy
+  477  go run api2404g.go
+  478  go mod tidy
+  479  go run api2404g.go
+  480  top
+  481  go run api2404g.go
+  482  exit
+  483  history
+  484  exit
+  485  screen -ls
+  486  screen -x umx
+  487  screen -ls
+  488  screen -x baoding
+  489  screen -x shupei
+  490  screen -api2404p
+  491  screen -api2404p
+  492  screen -x api2404
+  493  screen -ls
+  494  screen -x api2404p
+  495  screen -ls
+  496  screen -x api2404g
+  497  screen -ls
+  498  screen -r
+  499  ls
+  500  reboot
+  501  cd ..
+  502  cd /api2404g
+  503  cd /api2404
+  504  go run api2404g.go
+  505  go mod tidy
+  506  go run api2404g.go
+  507  go mod tidy
+  508  echo $https_proxy
+  509  export https_proxy=http://192.168.100.176:7480
+  510  go mod tidy
+  511  echo $https_proxy
+  512  go mod tidy
+  513  gi
+  514  go mod tidy
+  515  ls
+  516  go mod download github.com/golang/snappy
+  517  gi
+  518  go get github.com/topxeq/regexpx
+  519  gi
+  520  go run api2404g
+  521  go run api2404g.go
+  522  cd ~/goprjs
+  523  cd src
+  524  z api2404
+  525  cd /api2404
+  526  go get github.com/tidwall/gjson
+  527  go run api2404g.go
+  528  go mod download github.com/mholt/archiver/v3
+  529  go run api2404g.go
+  530  go mod download github.com/andybalholm/brotli
+  531  go mod download github.com/dsnet/compress
+  532  go mod download github.com/klauspost/compress
+  533  go mod download github.com/klauspost/pgzip
+  534  go mod download github.com/nwaples/rardecode
+  535  go mod download github.com/pierrec/lz4/v4
+  536  go mod download github.com/ulikunitz/xz
+  537  go run api2404g.go
+  538  echo $https_proxy
+  539  export https_proxy=
+  540  echo $https_proxy
+  541  go run api2404g.go
+  542  go get github.com/qax-os/excelize
+  543  vi go.mod
+  544  go run api2404g.go
+  545  go mod download github.com/qax-os/excelize
+  546  go get github.com/xuri/excelize/v2
+  547  vi go.mod
+  548  go mod download github.com/qax-os/excelize
+  549  vi go.mod
+  550  go mod download github.com/qax-os/excelize
+  551  go run api2404g.go
+  552  go get github.com/qax-os/excelize/v2
+  553  go run api2404g.go
+  554  history
+root@fltrp-sr-c-01:/api2404# historygo run api2404g.go
+"/api2404/config.json"
+main.ConfigType{UMXDBType:"mysql", UMXDBConnectString:"root:Fltrp#8881@tcp(129.0.1.157:3306)/umx2404", UMXURL:"https://capi.fltrp.com:7431/japi", UMXBACDBType:"mysql", UMXBACDBConnectString:"root:Fltrp#8881@tcp(129.0.1.157:3306)/umx2404", UMXBACURL:"https://capi.fltrp.com:7431/japi", EditorDBType:"mysql", EditorDBConnectString:"root:Fltrp#8881@tcp(129.0.1.157:3306)/editor", DBType:"mysql", DBConnectString:"root:Fltrp#8881@tcp(129.0.1.157:3306)/baoding", MainSecret:"UMX_easy", TokenSecret:"is_Token", TokenExpire:"1440", Apps:map[string]main.AppType{"baoding01":main.AppType{AppCode:"baoding01", AppSecret:"baobao01", AppName:"报定系统-高英", AppRemark:"", AppResv1:""}, "ed01":main.AppType{AppCode:"ed01", AppSecret:"eded06", AppName:"编辑辅助系统", AppRemark:"", AppResv1:""}, "fn01":main.AppType{AppCode:"fn01", AppSecret:"fnfn08", AppName:"财务工具集", AppRemark:"", AppResv1:""}, "fw01":main.AppType{AppCode:"fw01", AppSecret:"fwfw05", AppName:"法务平台", AppRemark:"", AppResv1:""}, "hr01":main.AppType{AppCode:"hr01", AppSecret:"hrhr01", AppName:"人力资源工具集", AppRemark:"", AppResv1:""}, "it01":main.AppType{AppCode:"it01", AppSecret:"itit03", AppName:"信息化管理平台", AppRemark:"", AppResv1:""}, "wl01":main.AppType{AppCode:"wl01", AppSecret:"wlwl02", AppName:"物流信息平台", AppRemark:"", AppResv1:""}}, TestMode:"true"}
+[2021/12/06 13:53:43] try starting ssl server on :7447...
+[2021/12/06 13:53:43] try starting server on :7446...
+[2021-12-06 13:55:02] REQ: "vendorFuzzSearch" (map[string]string{"name":"赵秀英", "req":"vendorFuzzSearch"})
+[2021-12-06 13:55:06] REQ: "vendorInfoQuery" (map[string]string{"id":"0000220798", "req":"vendorInfoQuery"})
+[2021-12-06 13:55:09] REQ: "vendorFuzzSearch" (map[string]string{"name":"赵秀英", "req":"vendorFuzzSearch"})
+[2021-12-06 13:55:11] REQ: "vendorInfoQuery" (map[string]string{"id":"0000223863", "req":"vendorInfoQuery"})
+[2021-12-06 13:55:17] REQ: "vendorFuzzSearch" (map[string]string{"name":"赵秀英", "req":"vendorFuzzSearch"})
+[2021-12-06 13:55:19] REQ: "vendorInfoQuery" (map[string]string{"id":"0000207812", "req":"vendorInfoQuery"})
+reqT: /ms
+[2021/12/06 13:55:35] host: capi.fltrp.com
+外网访问
+inputG: {"ProcessInstId":"726f7dec-2e92-4b09-bca9-7c3e053f3bb5"}
+map[ProcessInstId:726f7dec-2e92-4b09-bca9-7c3e053f3bb5]
+
+
+^Csignal: interrupt
+root@fltrp-sr-c-01:/api2404# exit
+exit
